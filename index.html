@@ -409,9 +409,8 @@
                 <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, marginBottom:8 }}>Administration</div>
                 <p style={{ color:"#4A6080", fontSize:14, marginBottom:24 }}>Espace reserve a l'equipe PM-EMPLOI</p>
                 <input type="password" placeholder="Code administrateur" value={pin} onChange={e=>setPin(e.target.value)} style={{ textAlign:"center", marginBottom:14, fontSize:16, letterSpacing:"4px" }}
-                  onKeyDown={e=>{if(e.key==="Enter"){if(pin==="admin2026")setAdminOk(true);else notify("Code incorrect","error");}}} />
-                <button style={{...S.btnP, width:"100%"}} onClick={()=>{if(pin==="admin2026")setAdminOk(true);else notify("Code incorrect","error");}}>Acceder</button>
-                <p style={{ fontSize:11, color:"#2D4A6A", marginTop:10 }}>Code demo : admin2026</p>
+                  onKeyDown={e=>{if(e.key==="Enter"){if(pin==="PMadmin2026!")setAdminOk(true);else notify("Code incorrect","error");}}} />
+                <button style={{...S.btnP, width:"100%"}} onClick={()=>{if(pin==="PMadmin2026!")setAdminOk(true);else notify("Code incorrect","error");}}>Acceder</button>
               </div> : <div>
                 <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, marginBottom:24 }}>
                   Verification des Mairies
