@@ -1,639 +1,1089 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PM•EMPLOI — Police Municipale</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
-  <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #070D1A; }</style>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState } = React;
+import { useState } from "react";
 
-    const MOCK_OFFICERS = [
-      { id: 1, nom: "Dupont", prenom: "Marc", grade: "Brigadier-Chef", annees: 12, commune: "Montpellier (34)", regions: ["Occitanie", "PACA"], specialites: ["Circulation", "Ilotage"], dispo: "Immediate", contact: "m.dupont@pm.fr | 06 12 34 56 78" },
-      { id: 2, nom: "Leroy", prenom: "Sophie", grade: "Gardien Principal", annees: 7, commune: "Bordeaux (33)", regions: ["Nouvelle-Aquitaine", "Occitanie"], specialites: ["LAPI", "VTT"], dispo: "3 mois", contact: "s.leroy@pm.fr | 06 98 76 54 32" },
-      { id: 3, nom: "Moreau", prenom: "Julien", grade: "Chef de Service", annees: 19, commune: "Lyon (69)", regions: ["AURA", "Bourgogne-FC"], specialites: ["Management", "Juridique", "ATHOS"], dispo: "6 mois", contact: "j.moreau@pm.fr | 06 55 44 33 22" },
-      { id: 4, nom: "Bernard", prenom: "Aurelie", grade: "Brigadier", annees: 5, commune: "Nantes (44)", regions: ["Pays de la Loire", "Bretagne"], specialites: ["Mediation", "Scolaire"], dispo: "Immediate", contact: "a.bernard@pm.fr | 06 11 22 33 44" },
-      { id: 5, nom: "Petit", prenom: "Thomas", grade: "Directeur de PM", annees: 24, commune: "Toulouse (31)", regions: ["Occitanie", "Nouvelle-Aquitaine"], specialites: ["Direction", "Budget", "RH"], dispo: "6 mois", contact: "t.petit@pm.fr | 06 77 88 99 00" },
-      { id: 6, nom: "Garcia", prenom: "Isabelle", grade: "Gardien", annees: 2, commune: "Marseille (13)", regions: ["PACA"], specialites: ["Prevention", "Numerique"], dispo: "Immediate", contact: "i.garcia@pm.fr | 06 33 44 55 66" },
-      { id: 7, nom: "Martin", prenom: "Cedric", grade: "Brigadier-Chef", annees: 15, commune: "Strasbourg (67)", regions: ["Grand Est", "Ile-de-France"], specialites: ["Cynophile", "LAPI", "Moto"], dispo: "1 mois", contact: "c.martin@pm.fr | 06 44 55 66 77" },
-      { id: 8, nom: "Roux", prenom: "Nathalie", grade: "Gardien Principal", annees: 9, commune: "Nice (06)", regions: ["PACA", "Occitanie"], specialites: ["Tourisme", "Drone"], dispo: "3 mois", contact: "n.roux@pm.fr | 06 22 33 44 55" },
-    ];
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const GRADES_CAT = {
+  "Gardien":        "C", "Gardien Principal": "C",
+  "Brigadier":      "C", "Brigadier-Chef":    "C",
+  "Chef de Service":"B", "Directeur de PM":   "A",
+};
+const catColor = (c) => ({ A:"#F59E0B", B:"#3B82F6", C:"#8FA3BB" }[c] || "#8FA3BB");
 
-    const MOCK_DEMANDES = [
-      { id: "m1", commune: "Macon", dept: "Saone-et-Loire (71)", siret: "21710278600015", nomContact: "Isabelle Marchand", fonction: "DRH", email: "drh@mairie-macon.fr", tel: "03 85 39 72 00", date: "25/03/2026", statut: "en_attente", justificatif: "Arrete_municipal_PM.pdf" },
-      { id: "m2", commune: "Ales", dept: "Gard (30)", siret: "21301003900016", nomContact: "Pierre Vidal", fonction: "Secretaire General", email: "sg@mairie-ales.fr", tel: "04 66 56 22 00", date: "24/03/2026", statut: "en_attente", justificatif: "Delegation_signature.pdf" },
-      { id: "m3", commune: "Frejus", dept: "Var (83)", siret: "21830056100014", nomContact: "Marie-Claire Bonnet", fonction: "Maire", email: "maire@ville-frejus.fr", tel: "04 94 51 83 83", date: "23/03/2026", statut: "validee", justificatif: "Mandat_electoral.pdf" },
-      { id: "m4", commune: "Inconnu", dept: "???", siret: "00000000000000", nomContact: "user123", fonction: "", email: "contact@gmail.com", tel: "06 00 00 00 00", date: "22/03/2026", statut: "rejetee", justificatif: "", motifRejet: "Email non institutionnel. SIRET invalide. Justificatif absent." },
-    ];
+const anonymize = (prenom, nom) => {
+  const a = nom.length > 2 ? nom[0] + "*".repeat(nom.length - 2) + nom[nom.length - 1] : nom[0] + "*";
+  return { display: `${prenom[0]}. ${a}`, initiales: `${prenom[0]}${nom[0]}` };
+};
 
-    const MOCK_ANNONCES = [
-      { id: 1, commune: "Saint-Etienne-de-Saint-Geoirs", dept: "Isere (38)", besoin: 2, grade: "Gardien / Brigadier", urgence: "Urgent", description: "Renforcement du service suite a extension de la ZPS. Poste perenne, logement possible.", date: "24/03/2026", region: "AURA" },
-      { id: 2, commune: "Sete", dept: "Herault (34)", besoin: 1, grade: "Chef de Service", urgence: "1 mois", description: "Direction d'un service de 18 agents. Experience management requise. Cadre de vie exceptionnel.", date: "22/03/2026", region: "Occitanie" },
-      { id: 3, commune: "Chateauroux", dept: "Indre (36)", besoin: 3, grade: "Tous grades", urgence: "3 mois", description: "Creation d'un nouveau service de PM. Logement fourni, prime d'installation.", date: "20/03/2026", region: "Centre-Val de Loire" },
-      { id: 4, commune: "Arcachon", dept: "Gironde (33)", besoin: 2, grade: "Brigadier-Chef", urgence: "Saison estivale", description: "Renfort saisonnier mai-septembre. Specialistes plage/nautique bienvenus.", date: "18/03/2026", region: "Nouvelle-Aquitaine" },
-      { id: 5, commune: "Meaux", dept: "Seine-et-Marne (77)", besoin: 4, grade: "Gardien Principal / Brigadier", urgence: "2 mois", description: "Developpement du service, partenariat PN renforce. LAPI et videoprotection apprecies.", date: "15/03/2026", region: "Ile-de-France" },
-    ];
+const dispoBadge = (d) => {
+  if (d === "Immédiate") return { bg:"#052e16", color:"#4ade80", dot:"#22c55e" };
+  if (d === "1 mois")    return { bg:"#1c1917", color:"#fbbf24", dot:"#f59e0b" };
+  return { bg:"#1e1b4b", color:"#a5b4fc", dot:"#818cf8" };
+};
 
-    const FORFAITS = [
-      { id: "f10", vues: 10, prix: 35, label: "Starter", desc: "Ideal pour un besoin cible", color: "#3B82F6" },
-      { id: "f25", vues: 25, prix: 75, label: "Essentiel", desc: "Le plus populaire", color: "#F59E0B", badge: "Populaire" },
-      { id: "f50", vues: 50, prix: 100, label: "Premium", desc: "Recrutement intensif", color: "#10B981" },
-    ];
+const isBadEmail = (e) => ["@gmail","@yahoo","@hotmail","@orange","@free.fr","@sfr.fr","@laposte"].some(d => e.includes(d));
+const statutBadge = (s) => {
+  if (s === "validee") return { bg:"#052e16", color:"#4ade80", label:"✅ Validée",   border:"#14532d" };
+  if (s === "rejetee") return { bg:"#450a0a", color:"#fca5a5", label:"❌ Rejetée",   border:"#7f1d1d" };
+  return                      { bg:"#1c1917", color:"#fbbf24", label:"⏳ En attente", border:"#78350f" };
+};
 
-    const GRADES = ["Gardien", "Gardien Principal", "Brigadier", "Brigadier-Chef", "Chef de Service", "Directeur de PM", "Autre"];
-    const REGIONS = ["Ile-de-France", "AURA", "Occitanie", "PACA", "Nouvelle-Aquitaine", "Pays de la Loire", "Bretagne", "Grand Est", "Normandie", "Hauts-de-France", "Centre-Val de Loire", "Bourgogne-FC", "Corse", "Outre-Mer"];
-    const SPECS = ["Circulation / Stationnement", "Ilotage", "LAPI", "Cynophile", "VTT / Moto", "Drone", "ATHOS", "Juridique", "Management / RH", "Mediation", "Prevention scolaire", "Armement", "Videoprotection", "Numerique"];
+// Calcul engagement de servir (max 3 ans depuis titularisation)
+const engagementRestant = (dateTitularisation, engagementSigne) => {
+  if (engagementSigne !== "Oui" || !dateTitularisation) return null;
+  const tit = new Date(dateTitularisation);
+  const fin = new Date(tit); fin.setFullYear(fin.getFullYear() + 3);
+  const now = new Date();
+  if (now >= fin) return null; // engagement expiré
+  const moisRestants = Math.ceil((fin - now) / (1000 * 60 * 60 * 24 * 30));
+  // barème dégressif 10 877€ sur 3 ans (36 mois)
+  const totalMois = 36;
+  const moisPassés = totalMois - moisRestants;
+  const rembPct = Math.max(0, 1 - moisPassés / totalMois);
+  const remb = Math.round(10877 * rembPct);
+  return { fin, moisRestants, remb };
+};
 
-    const dispoBadge = (d) => {
-      if (d === "Immediate") return { bg: "#052e16", color: "#4ade80", dot: "#22c55e" };
-      if (d === "1 mois") return { bg: "#1c1917", color: "#fbbf24", dot: "#f59e0b" };
-      return { bg: "#1e1b4b", color: "#a5b4fc", dot: "#818cf8" };
-    };
+// ─── Données de référence ────────────────────────────────────────────────────
+const GRADES       = ["Gardien","Gardien Principal","Brigadier","Brigadier-Chef","Chef de Service","Directeur de PM"];
+const REGIONS      = ["Île-de-France","AURA","Occitanie","PACA","Nouvelle-Aquitaine","Pays de la Loire","Bretagne","Grand Est","Normandie","Hauts-de-France","Centre-Val de Loire","Bourgogne-FC","Corse","Outre-Mer"];
+const SPECIALITES  = ["Circulation / Stationnement","Îlotage","LAPI","Cynophile","VTT / Moto","Drone","ATHOS","Juridique","Management / RH","Médiation","Prévention scolaire","Multilingue","Armement","Vidéoprotection","Numérique"];
+const TYPE_EMPLOYEUR = ["Commune","EPCI à fiscalité propre","Syndicat intercommunal","Centre de Gestion (CDG)"];
+const TYPE_MOBILITE  = ["Mutation externe","Détachement","Mise à disposition","Toutes options"];
+const ORIGINES       = ["Policier municipal en poste","Lauréat de concours (1er poste)","Détachement Police Nationale","Détachement Gendarmerie"];
+const FONCTIONS_MAIRIE = ["Maire","Adjoint au Maire","DGS","DRH","Chef de service PM","Secrétaire Général","Délégataire identifié"];
 
-    const anonymize = (prenom, nom) => {
-      const a = nom.length > 2 ? nom[0] + "*".repeat(nom.length - 2) + nom[nom.length - 1] : nom[0] + "*";
-      return { display: prenom[0] + ". " + a, initiales: prenom[0] + nom[0] };
-    };
+// ─── Abonnements mensuels ────────────────────────────────────────────────────
+const ABONNEMENTS = [
+  { id:"decouverte", label:"Découverte",     prix:29,  prixAnnuel:290,  remisePct:17, contactsMois:3,   illimite:false, color:"#3B82F6", cible:"Petite commune (1-3 PM)",  desc:"Sans engagement · Idéal pour tester" },
+  { id:"essentiel",  label:"Essentiel",      prix:49,  prixAnnuel:499,  remisePct:15, contactsMois:10,  illimite:false, color:"#F59E0B", cible:"Commune standard",          desc:"Alertes légales incluses" },
+  { id:"premium",    label:"Premium",        prix:179, prixAnnuel:1790, remisePct:17, contactsMois:999, illimite:true,  color:"#10B981", cible:"Grande ville (15+ PM)",     desc:"Tableau de bord · Exports · Matching" },
+  { id:"cdg_dept",   label:"CDG Département",prix:399, prixAnnuel:3990, remisePct:17, contactsMois:999, illimite:true,  color:"#8B5CF6", cible:"Centre de Gestion",         desc:"Toutes communes affiliées — 1,16 €/commune/mois" },
+  { id:"cdg_region", label:"CDG Région",     prix:599, prixAnnuel:5990, remisePct:17, contactsMois:999, illimite:true,  color:"#EC4899", cible:"Multi-départements",        desc:"Accès API/SIRH · Tableau de bord régional" },
+];
 
-    const isBadEmail = (e) => ["@gmail","@yahoo","@hotmail","@orange","@free.fr","@sfr.fr","@laposte"].some(d => e.includes(d));
+// ─── Mock data enrichi ────────────────────────────────────────────────────────
+const MOCK_OFFICERS = [
+  { id:1, nom:"Dupont",  prenom:"Marc",    grade:"Brigadier-Chef",   categorie:"C", annees:12, commune:"Montpellier (34)", typeEmployeur:"Commune",
+    origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2014-06-01", engagementSigne:"Non",
+    regions:["Occitanie","PACA"], specialites:["Circulation / Stationnement","Îlotage"], dispo:"Immédiate", typeMobilite:"Mutation externe",
+    prioriteLegale:[], contact:"m.dupont@pm.fr | 06 12 34 56 78" },
+  { id:2, nom:"Leroy",   prenom:"Sophie",  grade:"Gardien Principal", categorie:"C", annees:7,  commune:"Bordeaux (33)", typeEmployeur:"EPCI à fiscalité propre",
+    origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2018-09-01", engagementSigne:"Non",
+    regions:["Nouvelle-Aquitaine","Occitanie"], specialites:["LAPI","VTT / Moto"], dispo:"3 mois", typeMobilite:"Mutation externe",
+    prioriteLegale:["conjoint"], contact:"s.leroy@pm.fr | 06 98 76 54 32" },
+  { id:3, nom:"Moreau",  prenom:"Julien",  grade:"Chef de Service",   categorie:"B", annees:19, commune:"Lyon (69)", typeEmployeur:"Commune",
+    origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2007-04-01", engagementSigne:"Non",
+    regions:["AURA","Bourgogne-FC"], specialites:["Management / RH","Juridique","ATHOS"], dispo:"6 mois", typeMobilite:"Mutation externe",
+    prioriteLegale:[], contact:"j.moreau@pm.fr | 06 55 44 33 22" },
+  { id:4, nom:"Bernard", prenom:"Aurélie", grade:"Brigadier",         categorie:"C", annees:5,  commune:"Nantes (44)", typeEmployeur:"Commune",
+    origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2021-03-01", engagementSigne:"Oui",
+    regions:["Pays de la Loire","Bretagne"], specialites:["Médiation","Prévention scolaire"], dispo:"Immédiate", typeMobilite:"Toutes options",
+    prioriteLegale:["rqth"], contact:"a.bernard@pm.fr | 06 11 22 33 44" },
+  { id:5, nom:"Petit",   prenom:"Thomas",  grade:"Directeur de PM",   categorie:"A", annees:24, commune:"Toulouse (31)", typeEmployeur:"Commune",
+    origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2002-01-01", engagementSigne:"Non",
+    regions:["Occitanie","Nouvelle-Aquitaine"], specialites:["Management / RH","Juridique","Armement"], dispo:"6 mois", typeMobilite:"Mutation externe",
+    prioriteLegale:[], contact:"t.petit@pm.fr | 06 77 88 99 00" },
+  { id:6, nom:"Garcia",  prenom:"Isabelle",grade:"Gardien",           categorie:"C", annees:2,  commune:"Marseille (13)", typeEmployeur:"Syndicat intercommunal",
+    origine:"Lauréat de concours (1er poste)", statut:"laureat", dateTitularisation:"", engagementSigne:"Non",
+    regions:["PACA"], specialites:["Prévention scolaire","Numérique"], dispo:"Immédiate", typeMobilite:"Toutes options",
+    prioriteLegale:[], contact:"i.garcia@pm.fr | 06 33 44 55 66" },
+  { id:7, nom:"Martin",  prenom:"Cédric",  grade:"Brigadier-Chef",   categorie:"C", annees:15, commune:"Strasbourg (67)", typeEmployeur:"EPCI à fiscalité propre",
+    origine:"Détachement Police Nationale", statut:"titulaire", dateTitularisation:"2010-06-01", engagementSigne:"Non",
+    regions:["Grand Est","Île-de-France"], specialites:["Cynophile","LAPI","VTT / Moto"], dispo:"1 mois", typeMobilite:"Détachement",
+    prioriteLegale:["conjoint"], contact:"c.martin@pm.fr | 06 44 55 66 77" },
+  { id:8, nom:"Roux",    prenom:"Nathalie",grade:"Gardien Principal", categorie:"C", annees:9,  commune:"Nice (06)", typeEmployeur:"Commune",
+    origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2017-09-01", engagementSigne:"Non",
+    regions:["PACA","Occitanie"], specialites:["Multilingue","Drone","Vidéoprotection"], dispo:"3 mois", typeMobilite:"Mutation externe",
+    prioriteLegale:["aidant"], contact:"n.roux@pm.fr | 06 22 33 44 55" },
+];
 
-    const statutStyle = (s) => {
-      if (s === "validee") return { bg: "#052e16", color: "#4ade80", label: "Validee", border: "#14532d" };
-      if (s === "rejetee") return { bg: "#450a0a", color: "#fca5a5", label: "Rejetee", border: "#7f1d1d" };
-      return { bg: "#1c1917", color: "#fbbf24", label: "En attente", border: "#78350f" };
-    };
+const MOCK_DEMANDES = [
+  { id:"m1", commune:"Mâcon",   dept:"Saône-et-Loire (71)", siret:"21710278600015", typeEmployeur:"Commune", nomContact:"Isabelle Marchand", fonction:"DRH", email:"drh@mairie-macon.fr",  tel:"03 85 39 72 00", date:"25/03/2026", statut:"en_attente", justificatif:"Arrêté_municipal_PM.pdf" },
+  { id:"m2", commune:"Alès",    dept:"Gard (30)",           siret:"21301003900016", typeEmployeur:"EPCI à fiscalité propre", nomContact:"Pierre Vidal",    fonction:"Secrétaire Général", email:"sg@mairie-ales.fr",  tel:"04 66 56 22 00", date:"24/03/2026", statut:"en_attente", justificatif:"Délégation_signature.pdf" },
+  { id:"m3", commune:"Fréjus",  dept:"Var (83)",            siret:"21830056100014", typeEmployeur:"Commune", nomContact:"Marie-Claire Bonnet",fonction:"Maire",  email:"maire@ville-frejus.fr",tel:"04 94 51 83 83", date:"23/03/2026", statut:"validee",   justificatif:"Mandat_electoral.pdf" },
+  { id:"m4", commune:"Inconnu", dept:"???",                  siret:"00000000000000", typeEmployeur:"Commune", nomContact:"user123",            fonction:"",       email:"contact@gmail.com",    tel:"06 00 00 00 00", date:"22/03/2026", statut:"rejetee",   justificatif:"", motifRejet:"Email non institutionnel. SIRET invalide." },
+];
 
-    function App() {
-      const [view, setView] = useState("accueil");
-      const [modal, setModal] = useState(null);
-      const [unlocked, setUnlocked] = useState(new Set());
-      const [viewsLeft, setViewsLeft] = useState(null);
-      const [forfait, setForfait] = useState(null);
-      const [role, setRole] = useState(null);
-      const [verified, setVerified] = useState(false);
-      const [officers, setOfficers] = useState(MOCK_OFFICERS);
-      const [annonces, setAnnonces] = useState(MOCK_ANNONCES);
-      const [demandes, setDemandes] = useState(MOCK_DEMANDES);
-      const [fRegion, setFRegion] = useState("Toutes");
-      const [fDispo, setFDispo] = useState("Toutes");
-      const [notif, setNotif] = useState(null);
-      const [pin, setPin] = useState("");
-      const [adminOk, setAdminOk] = useState(false);
-      const [motifRejet, setMotifRejet] = useState("");
-      const [newOfficer, setNewOfficer] = useState({ nom:"", prenom:"", grade:"Gardien", annees:"", commune:"", regions:[], specialites:[], dispo:"Immediate", email:"", tel:"" });
-      const [newMairie, setNewMairie] = useState({ commune:"", dept:"", siret:"", nomContact:"", fonction:"", email:"", tel:"", justificatif:"" });
+const MOCK_ANNONCES = [
+  { id:1, commune:"Saint-Étienne-de-Saint-Geoirs", dept:"Isère (38)",          besoin:2, grade:"Gardien / Brigadier",    typeEmployeur:"Commune",               urgence:"Urgent",        description:"Renforcement suite à extension ZPS. Poste pérenne, logement possible.", date:"24/03/2026", region:"AURA" },
+  { id:2, commune:"Sète",                           dept:"Hérault (34)",         besoin:1, grade:"Chef de Service",        typeEmployeur:"Commune",               urgence:"1 mois",        description:"Direction d'un service de 18 agents. Expérience management requise.",   date:"22/03/2026", region:"Occitanie" },
+  { id:3, commune:"Châteauroux",                    dept:"Indre (36)",           besoin:3, grade:"Tous grades",            typeEmployeur:"Commune",               urgence:"3 mois",        description:"Création nouveau service PM. Logement fourni, prime d'installation.",    date:"20/03/2026", region:"Centre-Val de Loire" },
+  { id:4, commune:"Agglo. du Bassin d'Arcachon",   dept:"Gironde (33)",         besoin:2, grade:"Brigadier-Chef",         typeEmployeur:"EPCI à fiscalité propre",urgence:"Saison estivale",description:"Renfort mai-sept. Spécialistes plage/nautique bienvenus.",             date:"18/03/2026", region:"Nouvelle-Aquitaine" },
+  { id:5, commune:"Meaux",                          dept:"Seine-et-Marne (77)", besoin:4, grade:"Gardien Principal / Brigadier", typeEmployeur:"Commune",        urgence:"2 mois",        description:"Développement service, partenariat PN renforcé. LAPI apprécié.",        date:"15/03/2026", region:"Île-de-France" },
+];
 
-      const notify = (msg, type="success") => { setNotif({msg,type}); setTimeout(()=>setNotif(null),3500); };
+// ─── Composant principal ──────────────────────────────────────────────────────
+export default function App() {
+  const [view, setView]           = useState("accueil");
+  const [modal, setModal]         = useState(null);
+  const [role, setRole]           = useState(null);
+  const [unlocked, setUnlocked]   = useState(new Set());
+  const [abonnement, setAbonnement] = useState(null);     // abonnement actif mairie
+  const [contactsRestants, setContactsRestants] = useState(0);
+  const [facturation, setFacturation] = useState("mensuel");
+  const [mairieVerifiee, setMairieVerifiee] = useState(false);
+  const [officers, setOfficers]   = useState(MOCK_OFFICERS);
+  const [annonces, setAnnonces]   = useState(MOCK_ANNONCES);
+  const [demandes, setDemandes]   = useState(MOCK_DEMANDES);
+  const [notif, setNotif]         = useState(null);
+  const [adminOk, setAdminOk]     = useState(false);
+  const [adminPin, setAdminPin]   = useState("");
+  const [motifRejet, setMotifRejet] = useState("");
+  const [filterRegion, setFilterRegion] = useState("Toutes");
+  const [filterDispo, setFilterDispo]   = useState("Toutes");
+  const [filterCat, setFilterCat]       = useState("Toutes");
+  const [filterStatut, setFilterStatut] = useState("Tous");
 
-      const unlock = (id) => {
-        if (!verified) { setModal({type:"nv"}); return; }
-        if (!forfait) { setModal({type:"price"}); return; }
-        if (viewsLeft <= 0) { setModal({type:"price"}); return; }
-        setUnlocked(p => new Set([...p, id]));
-        setViewsLeft(v => v-1);
-        notify("Contact deverrouille ! Reste : " + (viewsLeft-1) + " vue(s).");
-      };
+  const [newOfficer, setNewOfficer] = useState({
+    nom:"", prenom:"", grade:"Gardien", annees:"", commune:"", typeEmployeur:"Commune",
+    origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"", engagementSigne:"Non",
+    regions:[], specialites:[], dispo:"Immédiate", typeMobilite:"Mutation externe",
+    prioriteLegale:[], email:"", tel:""
+  });
+  const [newMairie, setNewMairie] = useState({
+    commune:"", dept:"", siret:"", typeEmployeur:"Commune",
+    nomContact:"", fonction:"", email:"", tel:"", justificatif:""
+  });
+  const [newAnnonce, setNewAnnonce] = useState({
+    commune:"", dept:"", besoin:"1", grade:"Tous grades", typeEmployeur:"Commune",
+    urgence:"", description:"", region:""
+  });
 
-      const buyForfait = (f) => {
-        if (!verified) { setModal({type:"nv"}); return; }
-        setForfait(f); setViewsLeft(f.vues); setModal(null);
-        notify("Forfait " + f.label + " active — " + f.vues + " vues disponibles");
-      };
+  const notify = (msg, type="success") => {
+    setNotif({ msg, type });
+    setTimeout(() => setNotif(null), 4000);
+  };
 
-      const saveOfficer = () => {
-        if (!newOfficer.nom || !newOfficer.prenom || !newOfficer.email) { notify("Champs obligatoires manquants","error"); return; }
-        setOfficers(p => [{ ...newOfficer, id: p.length+1, contact: newOfficer.email+" | "+newOfficer.tel, annees: parseInt(newOfficer.annees)||0 }, ...p]);
-        setView("policiers");
-        notify("Profil cree ! Votre identite est anonymisee sur la plateforme.");
-      };
+  const souscribreAbonnement = (ab) => {
+    if (!mairieVerifiee) { setModal({ type:"non_verifiee" }); return; }
+    setAbonnement(ab);
+    setContactsRestants(ab.illimite ? 9999 : ab.contactsMois);
+    setModal(null);
+    notify(`Abonnement ${ab.label} activé — ${ab.illimite ? "contacts illimités" : `${ab.contactsMois} contacts/mois`}`);
+  };
 
-      const saveMairie = () => {
-        if (!newMairie.commune || !newMairie.siret || !newMairie.email || !newMairie.nomContact || !newMairie.fonction) { notify("Champs obligatoires manquants","error"); return; }
-        if (isBadEmail(newMairie.email)) { notify("Email non institutionnel refuse","error"); return; }
-        if (newMairie.siret.length !== 14) { notify("SIRET doit comporter 14 chiffres","error"); return; }
-        setDemandes(p => [{ ...newMairie, id:"m"+(p.length+1), date: new Date().toLocaleDateString("fr-FR"), statut:"en_attente" }, ...p]);
-        setRole(null); setView("accueil");
-        notify("Demande soumise ! Reponse sous 48h.");
-      };
+  const deverrouiller = (id) => {
+    if (!mairieVerifiee) { setModal({ type:"non_verifiee" }); return; }
+    if (!abonnement) { setModal({ type:"abonnement" }); return; }
+    if (contactsRestants <= 0) { notify("Quota mensuel atteint — renouvellement le 1er du mois.", "error"); return; }
+    setUnlocked(p => new Set([...p, id]));
+    if (!abonnement.illimite) setContactsRestants(c => c - 1);
+    notify(`Contact déverrouillé ! ${abonnement.illimite ? "Contacts illimités." : `Reste : ${contactsRestants - 1} ce mois.`}`);
+  };
 
-      const valider = (id) => { setDemandes(p => p.map(d => d.id===id ? {...d,statut:"validee"} : d)); setVerified(true); notify("Mairie validee !"); };
-      const rejeter = (id) => {
-        if (!motifRejet) { notify("Saisissez un motif","error"); return; }
-        setDemandes(p => p.map(d => d.id===id ? {...d,statut:"rejetee",motifRejet} : d));
-        setMotifRejet(""); setModal(null); notify("Demande rejetee.","error");
-      };
+  const sauvegarderPolicier = () => {
+    if (!newOfficer.nom || !newOfficer.prenom || !newOfficer.email) { notify("Champs obligatoires manquants", "error"); return; }
+    const cat = GRADES_CAT[newOfficer.grade] || "C";
+    setOfficers(p => [{ ...newOfficer, id: p.length+1, categorie: cat, contact:`${newOfficer.email} | ${newOfficer.tel}`, annees: parseInt(newOfficer.annees)||0 }, ...p]);
+    setView("policiers");
+    notify("Profil créé ! Votre identité est anonymisée sur la plateforme.");
+  };
 
-      const filtered = officers.filter(o => {
-        const rOk = fRegion==="Toutes" || (o.regions||[]).includes(fRegion);
-        const dOk = fDispo==="Toutes" || o.dispo===fDispo;
-        return rOk && dOk;
-      });
+  const soumettreMailrie = () => {
+    if (!newMairie.commune || !newMairie.siret || !newMairie.email || !newMairie.nomContact || !newMairie.fonction) { notify("Champs obligatoires manquants","error"); return; }
+    if (isBadEmail(newMairie.email)) { notify("Email non institutionnel refusé","error"); return; }
+    if (newMairie.siret.length !== 14) { notify("SIRET doit comporter 14 chiffres","error"); return; }
+    setDemandes(p => [{ ...newMairie, id:`m${p.length+1}`, date: new Date().toLocaleDateString("fr-FR"), statut:"en_attente" }, ...p]);
+    setRole(null); setView("accueil");
+    notify("Dossier soumis — réponse sous 48h ouvrées.");
+  };
 
-      const enAttente = demandes.filter(d => d.statut==="en_attente").length;
+  const publierAnnonce = () => {
+    if (!newAnnonce.commune || !newAnnonce.urgence) { notify("Champs obligatoires manquants","error"); return; }
+    setAnnonces(p => [{ ...newAnnonce, id: p.length+1, besoin: parseInt(newAnnonce.besoin)||1, date: new Date().toLocaleDateString("fr-FR") }, ...p]);
+    setRole(null); setView("annonces");
+    notify("Annonce publiée avec succès !");
+  };
 
-      const S = {
-        btnP: { background:"linear-gradient(135deg,#1D4ED8,#1E40AF)", color:"white", border:"none", padding:"10px 22px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:14, cursor:"pointer" },
-        btnG: { background:"transparent", color:"#94A3B8", border:"1px solid #1E3A5F", padding:"9px 20px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontWeight:500, fontSize:14, cursor:"pointer" },
-        btnOk: { background:"linear-gradient(135deg,#059669,#047857)", color:"white", border:"none", padding:"8px 18px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:13, cursor:"pointer" },
-        btnErr: { background:"linear-gradient(135deg,#DC2626,#B91C1C)", color:"white", border:"none", padding:"8px 18px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:13, cursor:"pointer" },
-        card: { background:"#0D1A2E", border:"1px solid #1A2E4A", borderRadius:12 },
-        inp: { background:"#0A1628", border:"1px solid #1E3A5F", color:"#E2E8F0", padding:"10px 14px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontSize:14, width:"100%", outline:"none" },
-        chip: (bg,color,border) => ({ display:"inline-flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:20, fontSize:11, fontWeight:600, background:bg, color, border:`1px solid ${border||bg}` }),
-      };
+  const validerMairie = (id) => {
+    setDemandes(p => p.map(d => d.id===id ? { ...d, statut:"validee" } : d));
+    setMairieVerifiee(true);
+    notify("Mairie validée — accès à la plateforme activé.");
+  };
 
-      return (
-        <div style={{ fontFamily:"'Barlow',sans-serif", background:"#070D1A", minHeight:"100vh", color:"#E8ECF0" }}>
-          <style>{`
-            @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap');
-            * { box-sizing:border-box; margin:0; padding:0; }
-            ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:#0D1525} ::-webkit-scrollbar-thumb{background:#1E3A5F;border-radius:3px}
-            input,select,textarea{background:#0A1628;border:1px solid #1E3A5F;color:#E2E8F0;padding:10px 14px;border-radius:8px;font-family:'Barlow',sans-serif;font-size:14px;width:100%;outline:none}
-            input:focus,select:focus,textarea:focus{border-color:#3B82F6}
-            input::placeholder,textarea::placeholder{color:#4A6080}
-            select option{background:#0D1A2E}
-            label{font-size:13px;color:#8FA3BB;font-weight:500;display:block;margin-bottom:5px}
-            .navlink{cursor:pointer;padding:6px 14px;border-radius:6px;transition:all .15s;font-weight:500;font-size:14px;color:#8FA3BB}
-            .navlink:hover{background:#0D1A2E;color:#60A5FA}
-            .navlink.act{background:#1E3A5F;color:#60A5FA}
-            .overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-            .modal{background:#0D1A2E;border:1px solid #1E3A5F;border-radius:16px;padding:32px;max-width:560px;width:90%;max-height:88vh;overflow-y:auto}
-            .toast{position:fixed;bottom:24px;right:24px;z-index:200;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;max-width:360px}
-            .tag{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #1E3A5F;background:#0A1628;color:#64748B}
-            .tag.sel{background:#1E3A5F;color:#60A5FA;border-color:#2D5A8E}
-            .fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-            @media(max-width:600px){.fr{grid-template-columns:1fr}}
-          `}</style>
+  const rejeterMairie = (id) => {
+    if (!motifRejet) { notify("Saisissez un motif","error"); return; }
+    setDemandes(p => p.map(d => d.id===id ? { ...d, statut:"rejetee", motifRejet } : d));
+    setMotifRejet(""); setModal(null);
+    notify("Demande rejetée.","error");
+  };
 
-          {/* Tricolore */}
-          <div style={{ height:3, background:"linear-gradient(90deg,#002395 33.33%,white 33.33%,white 66.66%,#ED2939 66.66%)" }} />
+  const toggleArr = (arr, val) => arr.includes(val) ? arr.filter(x => x!==val) : [...arr, val];
 
-          {/* Header */}
-          <header style={{ background:"#070D1A", borderBottom:"1px solid #1A2E4A", padding:"0 24px", position:"sticky", top:0, zIndex:50 }}>
-            <div style={{ maxWidth:1100, margin:"0 auto", height:58, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }} onClick={()=>setView("accueil")}>
-                <div style={{ width:36, height:36, background:"linear-gradient(135deg,#1D4ED8,#1E40AF)", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>&#x1F6E1;&#xFE0F;</div>
+  const filteredOfficers = officers.filter(o => {
+    const rOk = filterRegion === "Toutes" || (o.regions||[]).includes(filterRegion);
+    const dOk = filterDispo  === "Toutes" || o.dispo === filterDispo;
+    const cOk = filterCat    === "Toutes" || (GRADES_CAT[o.grade] || "C") === filterCat;
+    const sOk = filterStatut === "Tous"   || (filterStatut === "laureat" ? o.statut === "laureat" : o.statut === "titulaire");
+    return rOk && dOk && cOk && sOk;
+  });
+
+  const enAttente = demandes.filter(d => d.statut === "en_attente").length;
+
+  // ─── Styles inline partagés ──────────────────────────────────────────────
+  const S = {
+    btnP: { background:"linear-gradient(135deg,#1D4ED8,#1E40AF)", color:"white", border:"none", padding:"10px 22px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:14, cursor:"pointer", transition:"all .2s" },
+    btnG: { background:"transparent", color:"#94A3B8", border:"1px solid #1E3A5F", padding:"9px 20px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontWeight:500, fontSize:14, cursor:"pointer" },
+    btnOk: { background:"linear-gradient(135deg,#059669,#047857)", color:"white", border:"none", padding:"8px 18px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:13, cursor:"pointer" },
+    btnErr:{ background:"linear-gradient(135deg,#DC2626,#B91C1C)", color:"white", border:"none", padding:"8px 18px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:13, cursor:"pointer" },
+    card:  { background:"#0D1A2E", border:"1px solid #1A2E4A", borderRadius:12 },
+    inp:   { background:"#0A1628", border:"1px solid #1E3A5F", color:"#E2E8F0", padding:"10px 14px", borderRadius:8, fontFamily:"Barlow,sans-serif", fontSize:14, width:"100%", outline:"none" },
+    chip:  (bg,color,border) => ({ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:20, fontSize:11, fontWeight:600, background:bg, color, border:`1px solid ${border||bg}` }),
+    tag:   (sel) => ({ padding:"5px 10px", borderRadius:20, fontSize:11, fontWeight:600, cursor:"pointer", border:`1px solid ${sel?"#2D5A8E":"#1E3A5F"}`, background:sel?"#1E3A5F":"#0A1628", color:sel?"#60A5FA":"#64748B" }),
+    navlink:(act) => ({ cursor:"pointer", padding:"6px 14px", borderRadius:6, fontWeight:500, fontSize:14, color:act?"#60A5FA":"#8FA3BB", background:act?"#1E3A5F":"transparent" }),
+  };
+
+  const FR = { display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:14 };
+
+  return (
+    <div style={{ fontFamily:"'Barlow',sans-serif", background:"#070D1A", minHeight:"100vh", color:"#E8ECF0" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@700;800&display=swap');
+        * { box-sizing:border-box; margin:0; padding:0; }
+        ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:#0D1525} ::-webkit-scrollbar-thumb{background:#1E3A5F;border-radius:3px}
+        input,select,textarea{background:#0A1628;border:1px solid #1E3A5F;color:#E2E8F0;padding:10px 14px;border-radius:8px;font-family:'Barlow',sans-serif;font-size:14px;width:100%;outline:none}
+        input:focus,select:focus,textarea:focus{border-color:#3B82F6}
+        input::placeholder,textarea::placeholder{color:#4A6080}
+        select option{background:#0D1A2E}
+        label{font-size:13px;color:#8FA3BB;font-weight:500;display:block;margin-bottom:5px}
+        .overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+        .modal{background:#0D1A2E;border:1px solid #1E3A5F;border-radius:16px;padding:32px;max-width:600px;width:90%;max-height:88vh;overflow-y:auto}
+        .toast{position:fixed;bottom:24px;right:24px;z-index:200;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;max-width:380px}
+        .tricolor{height:3px;background:linear-gradient(90deg,#002395 33.33%,white 33.33%,white 66.66%,#ED2939 66.66%)}
+        .ab-card{border:2px solid transparent;border-radius:14px;padding:20px;transition:all .2s;cursor:pointer;background:#0A1628}
+        .ab-card:hover{transform:translateY(-3px)}
+        @media(max-width:600px){.fr2{grid-template-columns:1fr!important}}
+      `}</style>
+
+      <div className="tricolor" />
+
+      {/* ── HEADER ────────────────────────────────────────────────── */}
+      <header style={{ background:"#070D1A", borderBottom:"1px solid #1A2E4A", padding:"0 24px", position:"sticky", top:0, zIndex:50 }}>
+        <div style={{ maxWidth:1120, margin:"0 auto", height:58, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }} onClick={()=>setView("accueil")}>
+            <div style={{ width:36, height:36, background:"linear-gradient(135deg,#1D4ED8,#1E40AF)", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🛡️</div>
+            <div>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:800, color:"#E2E8F0", lineHeight:1 }}>PM•EMPLOI</div>
+              <div style={{ fontSize:10, color:"#4A6080", letterSpacing:"1.5px" }}>POLICE MUNICIPALE</div>
+            </div>
+          </div>
+          <nav style={{ display:"flex", gap:4, alignItems:"center" }}>
+            {[["accueil","🏠 Accueil"],["policiers","👮 Policiers"],["annonces","📋 Annonces"],["tarifs","💳 Tarifs"]].map(([v,l])=>(
+              <div key={v} style={S.navlink(view===v)} onClick={()=>setView(v)}>{l}</div>
+            ))}
+            <div style={{ ...S.navlink(view==="admin"), color:view==="admin"?"#F59E0B":"#4A6080", position:"relative" }} onClick={()=>setView("admin")}>
+              ⚙️ Admin
+              {enAttente > 0 && <span style={{ position:"absolute", top:2, right:2, width:8, height:8, background:"#EF4444", borderRadius:"50%", border:"1px solid #070D1A" }} />}
+            </div>
+          </nav>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            {mairieVerifiee && abonnement && (
+              <div style={S.chip("#052e16","#4ade80","#14532d")}>
+                {abonnement.label} · {abonnement.illimite ? "illimité" : `${contactsRestants} contact(s)`}
+              </div>
+            )}
+            {mairieVerifiee && !abonnement && <div style={S.chip("#052e16","#4ade80","#14532d")}>✅ Mairie vérifiée</div>}
+            <button style={S.btnG} onClick={()=>{setRole("policier");setView("inscription")}}>Inscription Policier</button>
+            <button style={S.btnP} onClick={()=>{setRole("mairie");setView("inscription")}}>Espace Mairie</button>
+          </div>
+        </div>
+      </header>
+
+      {notif && <div className="toast" style={{ background:notif.type==="error"?"#450a0a":"#052e16", border:`1px solid ${notif.type==="error"?"#7f1d1d":"#14532d"}`, color:notif.type==="error"?"#fca5a5":"#86efac" }}>
+        {notif.type==="error"?"⚠️":"✅"} {notif.msg}
+      </div>}
+
+      <main style={{ maxWidth:1120, margin:"0 auto", padding:"0 24px 60px" }}>
+
+        {/* ══ ACCUEIL ══════════════════════════════════════════════ */}
+        {view==="accueil" && <div>
+          <div style={{ textAlign:"center", padding:"68px 24px 52px", background:"radial-gradient(ellipse at 50% 0%,rgba(29,78,216,.14) 0%,transparent 60%)", borderBottom:"1px solid #1A2E4A" }}>
+            <div style={{ display:"inline-flex", gap:8, background:"#0D1A2E", border:"1px solid #1E3A5F", borderRadius:20, padding:"4px 16px", fontSize:12, color:"#60A5FA", marginBottom:22, fontWeight:700, letterSpacing:"1px" }}>
+              ⚡ PLATEFORME NATIONALE — ACCÈS SÉCURISÉ — ABONNEMENT MENSUEL
+            </div>
+            <h1 style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"clamp(40px,7vw,68px)", fontWeight:800, lineHeight:1.05, letterSpacing:"-1px", marginBottom:18 }}>
+              La mobilité de la<br /><span style={{ color:"#3B82F6" }}>Police Municipale</span>
+            </h1>
+            <p style={{ fontSize:16, color:"#8FA3BB", maxWidth:540, margin:"0 auto 20px", lineHeight:1.7 }}>
+              Agents anonymisés · Mairies officiellement vérifiées · Alertes légales (engagement de servir, priorités de mutation)
+            </p>
+            <div style={{ display:"inline-flex", gap:20, background:"#0D1A2E", border:"1px solid #1A2E4A", borderRadius:12, padding:"12px 28px", marginBottom:32, flexWrap:"wrap", justifyContent:"center" }}>
+              {["🔒 Anonymat agents","✅ Mairies vérifiées","⚖️ Alertes légales","💳 Abonnement mensuel"].map(t=>(
+                <span key={t} style={{ fontSize:13, color:"#60A5FA", fontWeight:600 }}>{t}</span>
+              ))}
+            </div>
+            <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
+              <button style={{ ...S.btnP, padding:"13px 28px", fontSize:15 }} onClick={()=>{setRole("policier");setView("inscription")}}>👮 Je suis policier municipal</button>
+              <button style={{ ...S.btnG, padding:"13px 28px", fontSize:15, borderColor:"#2D5A8E" }} onClick={()=>{setRole("mairie");setView("inscription")}}>🏛️ Je représente une mairie / CDG</button>
+            </div>
+          </div>
+
+          {/* Piliers sécurité */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(250px,1fr))", gap:16, padding:"36px 0 24px" }}>
+            {[
+              { color:"#3B82F6", icon:"🔒", titre:"Anonymat total", texte:"Noms masqués (M. D***t). Coordonnées chiffrées. Déverrouillage uniquement pour mairies vérifiées avec abonnement actif." },
+              { color:"#F59E0B", icon:"🏛️", titre:"Vérification mairies", texte:"SIRET + email institutionnel + justificatif officiel + type d'employeur (Commune, EPCI, Syndicat, CDG). Validation manuelle 48h." },
+              { color:"#10B981", icon:"⚖️", titre:"Alertes légales métier", texte:"Engagement de servir (10 877 €), priorités légales (conjoint, RQTH, aidant), préavis 3 mois, assermentation PN/Gendarmerie." },
+              { color:"#8B5CF6", icon:"💳", titre:"Abonnement mensuel", texte:"Dès 29€/mois. Renouvellement automatique. 2 mois offerts au paiement annuel. Résiliation à tout moment." },
+            ].map(({color,icon,titre,texte})=>(
+              <div key={titre} style={{ ...S.card, padding:20, borderLeft:`3px solid ${color}` }}>
+                <div style={{ fontSize:26, marginBottom:10 }}>{icon}</div>
+                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:8 }}>{titre}</div>
+                <p style={{ fontSize:13, color:"#64748B", lineHeight:1.7 }}>{texte}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:14, paddingBottom:40 }}>
+            {[["🛡️",officers.length,"Agents inscrits"],["📋",annonces.length,"Annonces actives"],["✅",demandes.filter(d=>d.statut==="validee").length,"Mairies vérifiées"],["⚡","48h","Délai vérification"]].map(([icon,val,lab])=>(
+              <div key={lab} style={{ background:"linear-gradient(135deg,#0D1A2E,#0A1628)", border:"1px solid #1A2E4A", borderRadius:12, padding:"18px", textAlign:"center" }}>
+                <div style={{ fontSize:22, marginBottom:6 }}>{icon}</div>
+                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:32, fontWeight:800, color:"#60A5FA" }}>{val}</div>
+                <div style={{ fontSize:12, color:"#4A6080", marginTop:4 }}>{lab}</div>
+              </div>
+            ))}
+          </div>
+        </div>}
+
+        {/* ══ POLICIERS ════════════════════════════════════════════ */}
+        {view==="policiers" && <div style={{ paddingTop:36 }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:14, flexWrap:"wrap", gap:12 }}>
+            <div>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800 }}>Policiers disponibles</div>
+              <p style={{ color:"#4A6080", fontSize:13, marginTop:4 }}>{filteredOfficers.length} profil(s) — identités anonymisées</p>
+            </div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
+              {[
+                ["Toutes régions",...REGIONS.map(r=>r)],
+              ].map(() => null)}
+              <select value={filterRegion} onChange={e=>setFilterRegion(e.target.value)} style={{ width:"auto", fontSize:12, padding:"7px 10px" }}>
+                <option value="Toutes">Toutes régions</option>
+                {REGIONS.map(r=><option key={r}>{r}</option>)}
+              </select>
+              <select value={filterDispo} onChange={e=>setFilterDispo(e.target.value)} style={{ width:"auto", fontSize:12, padding:"7px 10px" }}>
+                <option value="Toutes">Toutes dispo</option>
+                <option>Immédiate</option><option>1 mois</option><option>3 mois</option><option>6 mois</option>
+              </select>
+              <select value={filterCat} onChange={e=>setFilterCat(e.target.value)} style={{ width:"auto", fontSize:12, padding:"7px 10px" }}>
+                <option value="Toutes">Cat. A/B/C</option>
+                <option value="A">Cat. A — Directeur</option>
+                <option value="B">Cat. B — Chef de service</option>
+                <option value="C">Cat. C — Gardien / Brigadier</option>
+              </select>
+              <select value={filterStatut} onChange={e=>setFilterStatut(e.target.value)} style={{ width:"auto", fontSize:12, padding:"7px 10px" }}>
+                <option value="Tous">Titulaires + Lauréats</option>
+                <option value="titulaire">Titulaires en mutation</option>
+                <option value="laureat">Lauréats (1er poste)</option>
+              </select>
+              <button style={{ ...S.btnP, fontSize:12 }} onClick={()=>mairieVerifiee?setModal({type:"abonnement"}):setModal({type:"non_verifiee"})}>💳 Abonnement</button>
+            </div>
+          </div>
+
+          {/* Bandeau info */}
+          <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:10, padding:"10px 16px", marginBottom:20, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:16 }}>🔒</span>
+            <span style={{ fontSize:13, color:"#8FA3BB" }}>
+              <strong style={{ color:"#60A5FA" }}>Données protégées</strong> — noms masqués, contacts chiffrés. Accès réservé aux mairies vérifiées avec abonnement actif.
+              {!mairieVerifiee && <span style={{ color:"#F59E0B" }}> → <span style={{ cursor:"pointer", textDecoration:"underline" }} onClick={()=>{setRole("mairie");setView("inscription")}}>Demander la vérification</span></span>}
+            </span>
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))", gap:16 }}>
+            {filteredOfficers.map(o => {
+              const { display:anonName, initiales } = anonymize(o.prenom, o.nom);
+              const isUnlocked = unlocked.has(o.id);
+              const db = dispoBadge(o.dispo);
+              const cat = GRADES_CAT[o.grade] || "C";
+              const engagement = engagementRestant(o.dateTitularisation, o.engagementSigne);
+              const isPN = o.origine && (o.origine.includes("Police Nationale") || o.origine.includes("Gendarmerie"));
+              const isLaureat = o.statut === "laureat";
+              return (
+                <div key={o.id} style={{ ...S.card, padding:18 }}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor="#2D5A8E"}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor="#1A2E4A"}>
+
+                  {/* En-tête profil */}
+                  <div style={{ display:"flex", gap:12, marginBottom:12 }}>
+                    <div style={{ width:46, height:46, borderRadius:10, background:"linear-gradient(135deg,#1E3A5F,#1D4ED8)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Barlow Condensed',sans-serif", fontSize:15, fontWeight:700, color:"#93C5FD", flexShrink:0 }}>
+                      {initiales}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                        <span style={{ fontWeight:700, fontSize:14, color:isUnlocked?"#E2E8F0":"#94A3B8", fontFamily:isUnlocked?"inherit":"monospace" }}>
+                          {isUnlocked ? `${o.prenom} ${o.nom}` : anonName}
+                        </span>
+                        {!isUnlocked && <span style={{ fontSize:9, background:"#1E3A5F", color:"#60A5FA", padding:"1px 5px", borderRadius:3, fontWeight:700 }}>ANONYME</span>}
+                        {o.prioriteLegale?.includes("conjoint") && <span style={S.chip("#1e3a5f","#93C5FD","#2D5A8E")}>⭐ Priorité légale</span>}
+                        {o.prioriteLegale?.includes("rqth") && <span style={S.chip("#1e3a5f","#fbbf24","#78350f")}>♿ RQTH</span>}
+                        {o.prioriteLegale?.includes("aidant") && <span style={S.chip("#1e3a5f","#a5b4fc","#3730a3")}>🤝 Proche aidant</span>}
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3 }}>
+                        <span style={{ fontSize:12, color:"#60A5FA", fontWeight:600 }}>{o.grade}</span>
+                        <span style={{ fontSize:10, background:catColor(cat)+"22", color:catColor(cat), padding:"1px 6px", borderRadius:4, fontWeight:700 }}>Cat. {cat}</span>
+                      </div>
+                      <div style={{ fontSize:12, color:"#4A6080", marginTop:2 }}>📍 {o.commune}</div>
+                    </div>
+                    <div style={{ ...S.chip(db.bg, db.color, db.dot), height:"fit-content", flexShrink:0 }}>
+                      <span style={{ width:5, height:5, borderRadius:"50%", background:db.dot, display:"inline-block" }} />
+                      {o.dispo}
+                    </div>
+                  </div>
+
+                  {/* Badges statutaires */}
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
+                    {isLaureat && <span style={S.chip("#052e16","#4ade80","#14532d")}>🎓 Lauréat concours</span>}
+                    {!isLaureat && <span style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>📋 Mutation {o.typeMobilite}</span>}
+                    <span style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>🏢 {o.typeEmployeur}</span>
+                    {isPN && <span style={{ ...S.chip("#450a0a","#fca5a5","#7f1d1d"), fontSize:10 }}>⚠️ Nouvelle assermentation requise</span>}
+                  </div>
+
+                  {/* Alertes légales */}
+                  {engagement && (
+                    <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:6, padding:"7px 10px", marginBottom:10, fontSize:11 }}>
+                      <span style={{ color:"#fbbf24", fontWeight:600 }}>⏳ Engagement de servir</span>
+                      <span style={{ color:"#92400e", marginLeft:4 }}>jusqu'au {engagement.fin.toLocaleDateString("fr-FR")} ({engagement.moisRestants} mois) — remboursement estimé : {engagement.remb.toLocaleString("fr-FR")} €</span>
+                    </div>
+                  )}
+                  {isPN && (
+                    <div style={{ background:"#1e1b4b", border:"1px solid #3730a3", borderRadius:6, padding:"7px 10px", marginBottom:10, fontSize:11, color:"#a5b4fc" }}>
+                      ⚠️ Détachement PN/Gendarmerie — nouvelle assermentation obligatoire (3-6 mois, coût à prévoir pour la commune d'accueil)
+                    </div>
+                  )}
+
+                  {/* Ancienneté & régions */}
+                  <div style={{ marginBottom:8 }}>
+                    <div style={{ fontSize:10, color:"#4A6080", fontWeight:600, marginBottom:4, letterSpacing:"0.8px" }}>ANCIENNETÉ · RÉGIONS</div>
+                    <div style={{ fontSize:12, color:"#8FA3BB", marginBottom:6 }}>🏅 {o.annees} an{o.annees>1?"s":""}</div>
+                    <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                      {(o.regions||[]).map(r=><span key={r} style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>{r}</span>)}
+                    </div>
+                  </div>
+
+                  {/* Spécialités */}
+                  <div style={{ marginBottom:12 }}>
+                    <div style={{ fontSize:10, color:"#4A6080", fontWeight:600, marginBottom:4, letterSpacing:"0.8px" }}>SPÉCIALITÉS</div>
+                    <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
+                      {(o.specialites||[]).slice(0,4).map(s=><span key={s} style={S.chip("#1E3A5F","#93C5FD","#1E3A5F")}>{s}</span>)}
+                    </div>
+                  </div>
+
+                  {/* Contact */}
+                  {isUnlocked ? (
+                    <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"9px 12px" }}>
+                      <div style={{ fontSize:10, color:"#22c55e", fontWeight:700, marginBottom:4, letterSpacing:"0.8px" }}>✅ COORDONNÉES DÉVERROUILLÉES</div>
+                      <div style={{ fontSize:13, color:"#86efac" }}>{o.contact}</div>
+                      <div style={{ fontSize:11, color:"#4A6080", marginTop:4 }}>⏱️ Préavis légal : 3 mois à compter de la notification formelle</div>
+                    </div>
+                  ) : (
+                    <div style={{ background:"rgba(7,13,26,.9)", border:"1px dashed #1E3A5F", borderRadius:8, padding:"10px 12px" }}>
+                      <div style={{ fontSize:12, color:"#4A6080", marginBottom:7, filter:"blur(4px)", userSelect:"none" }}>x.xxxxx@xxxx.fr | 06 XX XX XX XX</div>
+                      <button style={{ ...S.btnP, width:"100%", fontSize:12 }} onClick={()=>deverrouiller(o.id)}>
+                        🔓 {!mairieVerifiee ? "Mairie non vérifiée" : !abonnement ? "Souscrire un abonnement" : "Voir les coordonnées"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>}
+
+        {/* ══ ANNONCES ════════════════════════════════════════════ */}
+        {view==="annonces" && <div style={{ paddingTop:36 }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:22, flexWrap:"wrap", gap:12 }}>
+            <div>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800 }}>Annonces des employeurs</div>
+              <p style={{ color:"#4A6080", fontSize:13, marginTop:4 }}>Communes, EPCI, Syndicats, CDG — vérifiés uniquement</p>
+            </div>
+            <button style={S.btnP} onClick={()=>{setRole("mairie");setView("inscription")}}>+ Publier une annonce</button>
+          </div>
+          <div style={{ display:"grid", gap:14 }}>
+            {annonces.map(a => (
+              <div key={a.id} style={{ ...S.card, padding:"20px 22px", display:"grid", gridTemplateColumns:"1fr auto", gap:16, alignItems:"start" }}
+                onMouseEnter={e=>e.currentTarget.style.borderColor="#2D5A8E"}
+                onMouseLeave={e=>e.currentTarget.style.borderColor="#1A2E4A"}>
                 <div>
-                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:800, color:"#E2E8F0", lineHeight:1 }}>PM&#x2022;EMPLOI</div>
-                  <div style={{ fontSize:10, color:"#4A6080", letterSpacing:"1.5px", fontWeight:500 }}>POLICE MUNICIPALE</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, flexWrap:"wrap" }}>
+                    <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:19, fontWeight:700, color:"#E2E8F0" }}>🏛️ {a.commune}</span>
+                    <span style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>{a.dept}</span>
+                    <span style={S.chip("#0A1628","#60A5FA","#1E3A5F")}>{a.typeEmployeur}</span>
+                    <span style={S.chip("#052e16","#4ade80","#14532d")}>✅ Vérifié</span>
+                    {a.urgence==="Urgent" && <span style={S.chip("#450a0a","#fca5a5","#7f1d1d")}>🔴 URGENT</span>}
+                  </div>
+                  <div style={{ fontSize:13, color:"#8FA3BB", marginBottom:8 }}>
+                    <strong style={{ color:"#60A5FA" }}>{a.besoin} poste(s)</strong> · {a.grade} · <strong style={{ color:"#E2E8F0" }}>{a.urgence}</strong>
+                  </div>
+                  <p style={{ fontSize:13, color:"#64748B", lineHeight:1.6, marginBottom:8 }}>{a.description}</p>
+                  <div style={{ fontSize:11, color:"#4A6080" }}>⏱️ Préavis légal de 3 mois applicable · Vérifier l'engagement de servir de l'agent</div>
+                </div>
+                <div style={{ textAlign:"right", flexShrink:0 }}>
+                  <div style={{ fontSize:11, color:"#2D4A6A", marginBottom:10 }}>{a.date}</div>
+                  <button style={{ ...S.btnP, fontSize:12 }} onClick={()=>setView("policiers")}>Voir les profils →</button>
                 </div>
               </div>
-              <nav style={{ display:"flex", gap:4, alignItems:"center" }}>
-                {[["accueil","Accueil"],["policiers","Policiers"],["annonces","Annonces"],["tarifs","Tarifs"]].map(([v,l]) => (
-                  <div key={v} className={"navlink"+(view===v?" act":"")} onClick={()=>setView(v)}>{l}</div>
-                ))}
-                <div className={"navlink"+(view==="admin"?" act":"")} style={{ color:view==="admin"?"#F59E0B":"#4A6080", position:"relative" }} onClick={()=>setView("admin")}>
-                  Admin {enAttente>0 && <span style={{ position:"absolute", top:2, right:2, width:8, height:8, background:"#EF4444", borderRadius:"50%", border:"1px solid #070D1A" }} />}
+            ))}
+          </div>
+        </div>}
+
+        {/* ══ TARIFS ══════════════════════════════════════════════ */}
+        {view==="tarifs" && <div style={{ paddingTop:36, maxWidth:900, margin:"0 auto" }}>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, textAlign:"center", marginBottom:8 }}>Abonnements mensuels</div>
+          <p style={{ textAlign:"center", color:"#4A6080", marginBottom:16 }}>Résiliation à tout moment · Renouvellement automatique · Réservé aux mairies officiellement vérifiées</p>
+
+          {/* Toggle mensuel / annuel */}
+          <div style={{ display:"flex", justifyContent:"center", gap:0, marginBottom:32 }}>
+            {["mensuel","annuel"].map(f => (
+              <button key={f} onClick={()=>setFacturation(f)} style={{ padding:"9px 24px", background:facturation===f?"#1D4ED8":"#0A1628", color:facturation===f?"white":"#94A3B8", border:"1px solid #1E3A5F", cursor:"pointer", fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:13, borderRadius:f==="mensuel"?"8px 0 0 8px":"0 8px 8px 0" }}>
+                {f === "mensuel" ? "Mensuel" : "Annuel — jusqu'à –17% · 2 mois offerts"}
+              </button>
+            ))}
+          </div>
+
+          {!mairieVerifiee && <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:10, padding:"13px 20px", marginBottom:32, textAlign:"center", fontSize:14 }}>
+            <span style={{ color:"#fbbf24" }}>⚠️ Votre mairie n'est pas encore vérifiée — </span>
+            <span style={{ color:"#F59E0B", cursor:"pointer", textDecoration:"underline" }} onClick={()=>{setRole("mairie");setView("inscription")}}>Déposer un dossier →</span>
+          </div>}
+
+          {/* ── Grille 3 colonnes · 2 rangées ────────────────────────
+               Col 1 : Découverte  (ligne 1) → CDG Département (ligne 2)
+               Col 2 : Essentiel   (ligne 1) → vide            (ligne 2)
+               Col 3 : Premium     (ligne 1) → CDG Région      (ligne 2)
+          ─────────────────────────────────────────────────────────── */}
+          {/* Labels de section */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:14, marginBottom:6 }}>
+            <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>COMMUNES · EPCI · SYNDICATS</div>
+            <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>COMMUNES · EPCI · SYNDICATS</div>
+            <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>COMMUNES · EPCI · SYNDICATS</div>
+          </div>
+
+          {(() => {
+            const communes = ABONNEMENTS.filter(ab=>!ab.id.startsWith("cdg"));
+            const cdgs     = ABONNEMENTS.filter(ab=>ab.id.startsWith("cdg"));
+            const renderCard = (ab) => {
+              if (!ab) return <div key="empty" />;
+              const prixAff = facturation==="annuel" ? Math.round(ab.prixAnnuel/12) : ab.prix;
+              const suffixe = facturation==="annuel"
+                ? `/mois · ${ab.prixAnnuel.toLocaleString("fr-FR")} €/an (−${ab.remisePct}%)`
+                : "/mois";
+              const isCdg = ab.id.startsWith("cdg");
+              return (
+                <div key={ab.id} className="ab-card" style={{ borderColor:`${ab.color}${mairieVerifiee?"80":"30"}`, opacity:mairieVerifiee?1:0.45, display:"flex", flexDirection:"column" }}
+                  onMouseEnter={e=>{if(mairieVerifiee)e.currentTarget.style.borderColor=ab.color}}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=`${ab.color}${mairieVerifiee?"80":"30"}`}>
+                  {/* Prix */}
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:38, fontWeight:800, color:ab.color, lineHeight:1 }}>{prixAff}€</div>
+                  <div style={{ fontSize:11, color:"#64748B", marginBottom:12, lineHeight:1.4 }}>{suffixe}</div>
+                  {/* Label + cible */}
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:16, fontWeight:700, color:"#E2E8F0", marginBottom:4 }}>{ab.label}</div>
+                  <div style={{ fontSize:11, color:"#64748B", marginBottom:12 }}>{ab.cible}</div>
+                  {/* Features */}
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:12, color:"#8FA3BB", marginBottom:8 }}>
+                      {ab.illimite ? "✓ Contacts illimités" : `✓ ${ab.contactsMois} contacts/mois`}
+                    </div>
+                    {["Annonces gratuites","Alertes légales","Profils anonymisés"].map(f=>(
+                      <div key={f} style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ {f}</div>
+                    ))}
+                    {ab.id==="essentiel"  && <div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Alerte engagement de servir 10 877 €</div>}
+                    {ab.id==="premium"    && <><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Tableau de bord RH · Exports CSV</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Matching priorités légales</div></>}
+                    {isCdg && <><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Vue consolidée département</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Matching priorités légales</div></>}
+                    {ab.id==="cdg_dept"   && <div style={{ fontSize:11, color:"#4ade80", marginBottom:4, fontWeight:600 }}>✓ {ab.desc}</div>}
+                    {ab.id==="cdg_region" && <><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Multi-départements · TB régional</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Accès API / intégration SIRH</div></>}
+                  </div>
+                  {/* Bouton */}
+                  {/* Badge "Le plus choisi" juste au-dessus du bouton */}
+                  {ab.id==="essentiel" && (
+                    <div style={{ textAlign:"center", marginTop:14, marginBottom:6 }}>
+                      <span style={{ background:`${ab.color}22`, color:ab.color, fontSize:11, fontWeight:700, padding:"4px 12px", borderRadius:20, display:"inline-block" }}>⭐ Le plus choisi</span>
+                    </div>
+                  )}
+                  <button style={{ ...S.btnP, width:"100%", marginTop: ab.id==="essentiel" ? 0 : 14, background:`linear-gradient(135deg,${ab.color},${ab.color}cc)`, fontSize:12, opacity:mairieVerifiee?1:0.4 }}
+                    onClick={()=>souscribreAbonnement(ab)} disabled={!mairieVerifiee}>
+                    {mairieVerifiee ? `Souscrire — ${prixAff} €${facturation==="annuel"?" / an":" / mois"}` : "🔒 Vérification requise"}
+                  </button>
                 </div>
-              </nav>
-              <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                {verified && <span style={{ display:"inline-flex", alignItems:"center", gap:5, background:"#052e16", border:"1px solid #14532d", color:"#4ade80", padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700 }}>Mairie verifiee</span>}
-                <button style={S.btnG} onClick={()=>{setRole("policier");setView("inscription")}}>Inscription Policier</button>
-                <button style={S.btnP} onClick={()=>{setRole("mairie");setView("inscription")}}>Espace Mairie</button>
+              );
+            };
+
+            return (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:14, marginBottom:36 }}>
+                {communes.map(ab => renderCard(ab))}
+                <div style={{ gridColumn:"1/-1", display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:14, marginTop:8 }}>
+                  <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>CENTRES DE GESTION (CDG)</div>
+                  <div />
+                  <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>CENTRES DE GESTION (CDG)</div>
+                </div>
+                {renderCard(cdgs[0])}
+                <div />
+                {renderCard(cdgs[1])}
+              </div>
+            );
+          })()}
+
+          {/* ── Commission au recrutement réussi ────────────────── */}
+          <div style={{ ...S.card, padding:"20px 24px", marginBottom:20, borderLeft:"3px solid #F59E0B" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:14, marginBottom:12 }}>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:36, fontWeight:800, color:"#F59E0B", lineHeight:1 }}>250 €</div>
+              <div>
+                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0" }}>Commission par recrutement réussi</div>
+                <div style={{ fontSize:12, color:"#64748B", marginTop:3 }}>Modèle à la performance — sans abonnement requis</div>
               </div>
             </div>
-          </header>
-
-          {notif && <div className="toast" style={{ background:notif.type==="error"?"#450a0a":"#052e16", border:`1px solid ${notif.type==="error"?"#7f1d1d":"#14532d"}`, color:notif.type==="error"?"#fca5a5":"#86efac" }}>{notif.type==="error"?"⚠":"✅"} {notif.msg}</div>}
-
-          <main style={{ maxWidth:1100, margin:"0 auto", padding:"0 24px 60px" }}>
-
-            {/* ACCUEIL */}
-            {view==="accueil" && <div>
-              <div style={{ textAlign:"center", padding:"72px 24px 56px", background:"radial-gradient(ellipse at 50% 0%,rgba(29,78,216,.14) 0%,transparent 60%)", borderBottom:"1px solid #1A2E4A" }}>
-                <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"#0D1A2E", border:"1px solid #1E3A5F", borderRadius:20, padding:"4px 16px", fontSize:12, color:"#60A5FA", marginBottom:24, fontWeight:700, letterSpacing:"1px" }}>
-                  PLATEFORME NATIONALE - ACCES RESERVE
-                </div>
-                <h1 style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:"clamp(42px,7vw,70px)", fontWeight:800, lineHeight:1.05, letterSpacing:"-1px", marginBottom:20 }}>
-                  La mobilite de la<br /><span style={{ color:"#3B82F6" }}>Police Municipale</span>
-                </h1>
-                <p style={{ fontSize:16, color:"#8FA3BB", maxWidth:520, margin:"0 auto 20px", lineHeight:1.7 }}>
-                  Plateforme securisee : agents anonymises, acces reserve aux communes officiellement verifiees.
-                </p>
-                <div style={{ display:"inline-flex", gap:24, background:"#0D1A2E", border:"1px solid #1A2E4A", borderRadius:12, padding:"12px 28px", marginBottom:36, flexWrap:"wrap", justifyContent:"center" }}>
-                  {["Identites anonymisees","Mairies verifiees","Acces controle"].map(t=><span key={t} style={{ fontSize:13, color:"#60A5FA", fontWeight:600 }}>{t}</span>)}
-                </div>
-                <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
-                  <button style={S.btnP} onClick={()=>{setRole("policier");setView("inscription")}}>Je suis policier municipal</button>
-                  <button style={{...S.btnG,borderColor:"#2D5A8E"}} onClick={()=>{setRole("mairie");setView("inscription")}}>Je represente une mairie</button>
-                </div>
-              </div>
-
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:16, padding:"40px 0 24px" }}>
-                {[
-                  { color:"#3B82F6", titre:"Anonymat des policiers", texte:"Les noms sont masques (ex : M. D***t). Seule une mairie verifiee avec forfait actif peut acceder aux coordonnees." },
-                  { color:"#F59E0B", titre:"Verification des mairies", texte:"SIRET + email institutionnel + justificatif officiel. Validation manuelle sous 48h par l'equipe PM-EMPLOI." },
-                  { color:"#10B981", titre:"Double barriere d'acces", texte:"Verification officielle + forfait payant = 2 conditions cumulatives. Protection totale des agents." },
-                ].map(({color,titre,texte})=>(
-                  <div key={titre} style={{...S.card, padding:22, borderLeft:`3px solid ${color}`}}>
-                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:700, color:"#E2E8F0", marginBottom:8 }}>{titre}</div>
-                    <p style={{ fontSize:13, color:"#64748B", lineHeight:1.7 }}>{texte}</p>
-                  </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div>
+                <div style={{ fontSize:12, color:"#8FA3BB", marginBottom:6, fontWeight:600 }}>Idéal pour</div>
+                {["Communes hésitant à s'abonner","Recrutements ponctuels urgents","Mairies sans budget RH-tech dédié"].map(f=>(
+                  <div key={f} style={{ fontSize:12, color:"#64748B", marginBottom:4 }}>✓ {f}</div>
                 ))}
               </div>
-
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:14, paddingBottom:40 }}>
-                {[["officers.length","Agents inscrits"],["annonces.length","Annonces actives"],["demandes.filter(d=>d.statut==='validee').length","Mairies verifiees"],["48h","Delai verification"]].map(([val,lab],i)=>(
-                  <div key={lab} style={{ background:"linear-gradient(135deg,#0D1A2E,#0A1628)", border:"1px solid #1A2E4A", borderRadius:12, padding:"20px 24px", textAlign:"center" }}>
-                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:34, fontWeight:800, color:"#60A5FA" }}>
-                      {i===0?officers.length:i===1?annonces.length:i===2?demandes.filter(d=>d.statut==="validee").length:"48h"}
-                    </div>
-                    <div style={{ fontSize:12, color:"#4A6080", marginTop:4 }}>{lab}</div>
-                  </div>
-                ))}
+              <div>
+                <div style={{ fontSize:12, color:"#8FA3BB", marginBottom:6, fontWeight:600 }}>Comment ça marche</div>
+                <div style={{ fontSize:12, color:"#64748B", lineHeight:1.6 }}>
+                  La commune contacte PM•EMPLOI pour un besoin ponctuel. Accès temporaire à la base de profils ciblés. Facturation de 250 € uniquement si le poste est pourvu via la plateforme (validation sur prise de poste).
+                </div>
               </div>
-            </div>}
+            </div>
+            <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:6, padding:"8px 12px", marginTop:12, fontSize:12, color:"#fbbf24" }}>
+              💡 Ce modèle est particulièrement puissant en période post-électorale 2026 — les nouveaux maires veulent agir vite, sans engagements longs.
+            </div>
+          </div>
 
-            {/* POLICIERS */}
-            {view==="policiers" && <div style={{ paddingTop:36 }}>
-              <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+          {/* Tableau comparatif concurrents */}
+          <div style={{ ...S.card, padding:"20px 24px" }}>
+            <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:14 }}>📊 Pourquoi PM•EMPLOI vaut son abonnement</div>
+            {[["emploi-territorial.fr","Gratuit","Généraliste FPT","Aucune","Non"],
+              ["La Gazette des Communes","Élevé","Généraliste FPT","Aucune","Non"],
+              ["CDG départementaux","Gratuit","1 département","Aucune","Non"],
+              ["PM•EMPLOI","Dès 29€/mois","100% Police Municipale","Oui (10 877€ + priorités)","Oui"],
+            ].map(([nom,prix,spec,alerte,anon],i) => (
+              <div key={nom} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 2fr 2fr 1fr", gap:8, padding:"8px 0", borderBottom:"1px solid #1A2E4A", fontSize:12, color:i===3?"#60A5FA":"#64748B", fontWeight:i===3?600:400 }}>
+                <span>{nom}</span><span>{prix}</span><span>{spec}</span><span>{alerte}</span><span>{anon}</span>
+              </div>
+            ))}
+            <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 2fr 2fr 1fr", gap:8, padding:"6px 0", fontSize:11, color:"#4A6080" }}>
+              <span>Plateforme</span><span>Tarif mairie</span><span>Spécialisation</span><span>Alertes légales</span><span>Anonymat</span>
+            </div>
+          </div>
+        </div>}
+
+        {/* ══ ADMIN ══════════════════════════════════════════════ */}
+        {view==="admin" && <div style={{ paddingTop:36 }}>
+          {!adminOk ? (
+            <div style={{ maxWidth:380, margin:"60px auto", textAlign:"center" }}>
+              <div style={{ fontSize:46, marginBottom:16 }}>⚙️</div>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:8 }}>Administration</div>
+              <p style={{ color:"#4A6080", fontSize:14, marginBottom:22 }}>Espace réservé à l'équipe PM•EMPLOI</p>
+              <input type="password" placeholder="Code administrateur" value={adminPin} onChange={e=>setAdminPin(e.target.value)} style={{ textAlign:"center", marginBottom:12, fontSize:16, letterSpacing:"4px" }}
+                onKeyDown={e=>{if(e.key==="Enter"){if(adminPin==="admin2026")setAdminOk(true);else notify("Code incorrect","error")}}} />
+              <button style={{ ...S.btnP, width:"100%" }} onClick={()=>{if(adminPin==="admin2026")setAdminOk(true);else notify("Code incorrect","error")}}>Accéder</button>
+              <p style={{ fontSize:11, color:"#2D4A6A", marginTop:10 }}>Code démo : admin2026</p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, flexWrap:"wrap", gap:12 }}>
                 <div>
-                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800 }}>Policiers disponibles</div>
-                  <p style={{ color:"#4A6080", fontSize:14, marginTop:4 }}>{filtered.length} profil(s) - Identites anonymisees</p>
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800 }}>Backoffice — Vérification des Mairies</div>
+                  {enAttente > 0 && <p style={{ color:"#F59E0B", fontSize:14, marginTop:4 }}>⚠️ {enAttente} dossier(s) en attente</p>}
                 </div>
-                <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-                  {forfait && verified && <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"6px 14px", fontSize:13, color:"#86efac", fontWeight:600 }}>{viewsLeft} vue(s) restante(s)</div>}
-                  <select value={fRegion} onChange={e=>setFRegion(e.target.value)} style={{ width:"auto", fontSize:13, padding:"8px 12px" }}>
-                    <option value="Toutes">Toutes regions</option>
-                    {REGIONS.map(r=><option key={r}>{r}</option>)}
-                  </select>
-                  <select value={fDispo} onChange={e=>setFDispo(e.target.value)} style={{ width:"auto", fontSize:13, padding:"8px 12px" }}>
-                    <option value="Toutes">Toutes dispo</option>
-                    <option>Immediate</option><option>1 mois</option><option>3 mois</option><option>6 mois</option>
-                  </select>
-                  <button style={S.btnP} onClick={()=>verified?setModal({type:"price"}):setModal({type:"nv"})}>Forfait contact</button>
+                <div style={{ display:"flex", gap:10 }}>
+                  {[["Toutes",demandes.length],["En attente",enAttente],["Validées",demandes.filter(d=>d.statut==="validee").length],["Rejetées",demandes.filter(d=>d.statut==="rejetee").length]].map(([l,n])=>(
+                    <div key={l} style={{ background:"#0D1A2E", border:"1px solid #1A2E4A", borderRadius:8, padding:"5px 12px", fontSize:12, color:"#8FA3BB" }}>{l} <strong style={{ color:"#E2E8F0" }}>{n}</strong></div>
+                  ))}
                 </div>
               </div>
-
-              <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:10, padding:"11px 18px", marginBottom:22, display:"flex", alignItems:"center", gap:10 }}>
-                <span style={{ fontSize:18 }}>&#x1F512;</span>
-                <span style={{ fontSize:13, color:"#8FA3BB" }}>
-                  <strong style={{ color:"#60A5FA" }}>Protection des donnees :</strong> Noms masques, contacts chiffres. Acces mairies verifiees + forfait actif uniquement.
-                  {!verified && <span style={{ color:"#F59E0B" }}> — <span style={{ cursor:"pointer", textDecoration:"underline" }} onClick={()=>{setRole("mairie");setView("inscription")}}>Demander la verification</span></span>}
-                </span>
-              </div>
-
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))", gap:16 }}>
-                {filtered.map(o => {
-                  const { display: anonName, initiales } = anonymize(o.prenom, o.nom);
-                  const isUnlocked = unlocked.has(o.id);
-                  const db = dispoBadge(o.dispo);
+              <div style={{ display:"grid", gap:14 }}>
+                {demandes.map(d => {
+                  const bs = statutBadge(d.statut);
+                  const alertes = [];
+                  if (isBadEmail(d.email)) alertes.push("Email non institutionnel");
+                  if (!d.justificatif) alertes.push("Justificatif manquant");
+                  if ((d.siret||"").length !== 14) alertes.push("SIRET invalide");
+                  if (!d.fonction) alertes.push("Fonction non renseignée");
                   return (
-                    <div key={o.id} style={{...S.card, padding:20}}>
-                      <div style={{ display:"flex", gap:14, marginBottom:14 }}>
-                        <div style={{ width:48, height:48, borderRadius:10, background:"linear-gradient(135deg,#1E3A5F,#1D4ED8)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Barlow Condensed',sans-serif", fontSize:16, fontWeight:700, color:"#93C5FD", flexShrink:0 }}>{initiales}</div>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
-                            <span style={{ fontWeight:700, fontSize:15, color:isUnlocked?"#E2E8F0":"#94A3B8", fontFamily:isUnlocked?"inherit":"monospace" }}>
-                              {isUnlocked?`${o.prenom} ${o.nom}`:anonName}
-                            </span>
-                            {!isUnlocked && <span style={{ fontSize:10, background:"#1E3A5F", color:"#60A5FA", padding:"2px 6px", borderRadius:4, fontWeight:700 }}>ANONYME</span>}
+                    <div key={d.id} style={{ ...S.card, padding:"18px 22px", borderLeft:`3px solid ${d.statut==="validee"?"#22c55e":d.statut==="rejetee"?"#EF4444":"#F59E0B"}` }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:16, alignItems:"start" }}>
+                        <div>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
+                            <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:19, fontWeight:700, color:"#E2E8F0" }}>🏛️ {d.commune}</span>
+                            <span style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>{d.dept}</span>
+                            <span style={S.chip("#0A1628","#60A5FA","#1E3A5F")}>{d.typeEmployeur}</span>
+                            <span style={S.chip(bs.bg, bs.color, bs.border)}>{bs.label}</span>
                           </div>
-                          <div style={{ fontSize:13, color:"#60A5FA", fontWeight:600 }}>{o.grade}</div>
-                          <div style={{ fontSize:12, color:"#4A6080", marginTop:1 }}>&#x1F4CD; {o.commune}</div>
+                          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:8, marginBottom:10 }}>
+                            {[["👤",`${d.nomContact}${d.fonction?" — "+d.fonction:""}`],["📧",d.email],["🔢",d.siret],["📎",d.justificatif||"Non fourni"]].map(([icon,val])=>(
+                              <div key={icon}>
+                                <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"0.8px", marginBottom:2 }}>{icon}</div>
+                                <div style={{ fontSize:12, color:val==="Non fourni"?"#EF4444":"#8FA3BB" }}>{val}</div>
+                              </div>
+                            ))}
+                          </div>
+                          {alertes.length > 0 && <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
+                            {alertes.map(a=><span key={a} style={S.chip("#450a0a","#fca5a5","#7f1d1d")}>⚠️ {a}</span>)}
+                          </div>}
+                          {alertes.length === 0 && d.statut==="en_attente" && <span style={S.chip("#052e16","#4ade80","#14532d")}>✅ Dossier complet — Prêt à valider</span>}
+                          {d.motifRejet && <div style={{ background:"#450a0a", border:"1px solid #7f1d1d", borderRadius:6, padding:"7px 10px", marginTop:8, fontSize:12, color:"#fca5a5" }}>Motif : {d.motifRejet}</div>}
                         </div>
-                        <div style={{ ...S.chip(db.bg, db.color, db.dot), height:"fit-content", flexShrink:0 }}>
-                          <span style={{ width:6, height:6, borderRadius:"50%", background:db.dot, display:"inline-block" }} />{o.dispo}
-                        </div>
+                        {d.statut==="en_attente" && <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
+                          <button style={S.btnOk} onClick={()=>validerMairie(d.id)}>✅ Valider</button>
+                          <button style={S.btnErr} onClick={()=>setModal({type:"rejeter",id:d.id})}>❌ Rejeter</button>
+                        </div>}
                       </div>
-                      <div style={{ marginBottom:10 }}>
-                        <div style={{ fontSize:11, color:"#4A6080", fontWeight:600, marginBottom:4 }}>ANCIENNETE</div>
-                        <div style={{ fontSize:13, color:"#8FA3BB" }}>{o.annees} an{o.annees>1?"s":""}</div>
-                      </div>
-                      <div style={{ marginBottom:10 }}>
-                        <div style={{ fontSize:11, color:"#4A6080", fontWeight:600, marginBottom:5 }}>REGIONS</div>
-                        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-                          {(o.regions||[]).map(r=><span key={r} style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>{r}</span>)}
-                        </div>
-                      </div>
-                      <div style={{ marginBottom:16 }}>
-                        <div style={{ fontSize:11, color:"#4A6080", fontWeight:600, marginBottom:5 }}>SPECIALITES</div>
-                        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-                          {(o.specialites||[]).slice(0,3).map(s=><span key={s} style={S.chip("#1E3A5F","#93C5FD","#1E3A5F")}>{s}</span>)}
-                        </div>
-                      </div>
-                      {isUnlocked ? (
-                        <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"10px 14px" }}>
-                          <div style={{ fontSize:11, color:"#22c55e", fontWeight:700, marginBottom:4 }}>COORDONNEES DEVERROUILLEES</div>
-                          <div style={{ fontSize:13, color:"#86efac" }}>{o.contact}</div>
-                        </div>
-                      ) : (
-                        <div style={{ background:"rgba(7,13,26,.9)", border:"1px dashed #1E3A5F", borderRadius:8, padding:"12px 14px" }}>
-                          <div style={{ fontSize:12, color:"#4A6080", marginBottom:8, filter:"blur(4px)", userSelect:"none" }}>x.xxxxx@xxxx.fr | 06 XX XX XX XX</div>
-                          <button style={{...S.btnP, width:"100%", fontSize:13}} onClick={()=>unlock(o.id)}>
-                            {!verified?"Mairie non verifiee - Demander l'acces":!forfait?"Acheter un forfait":"Voir les coordonnees"}
-                          </button>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
               </div>
-            </div>}
+            </div>
+          )}
+        </div>}
 
-            {/* ANNONCES */}
-            {view==="annonces" && <div style={{ paddingTop:36 }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:12 }}>
+        {/* ══ INSCRIPTION POLICIER ════════════════════════════════ */}
+        {view==="inscription" && role==="policier" && <div style={{ paddingTop:36, maxWidth:700, margin:"0 auto" }}>
+          <button style={{ ...S.btnG, marginBottom:22, fontSize:12 }} onClick={()=>setView("accueil")}>← Retour</button>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:6 }}>👮 Inscription Policier Municipal</div>
+          <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"10px 14px", marginBottom:20, fontSize:13, color:"#86efac" }}>
+            🔒 <strong>Protection garantie</strong> — nom anonymisé, coordonnées chiffrées. Déverrouillage uniquement par mairies officiellement vérifiées avec abonnement actif.
+          </div>
+          {(newOfficer.prenom||newOfficer.nom) && <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"9px 14px", marginBottom:16, fontSize:13 }}>
+            👁️ Aperçu public : <strong style={{ color:"#60A5FA" }}>
+              {newOfficer.prenom?newOfficer.prenom[0]+".":"J."} {newOfficer.nom?(newOfficer.nom[0]+(newOfficer.nom.length>2?"*".repeat(newOfficer.nom.length-2)+newOfficer.nom[newOfficer.nom.length-1]:"*")):"D***t"}
+            </strong>
+          </div>}
+          <div style={{ ...S.card, padding:26 }}>
+
+            {/* Identité */}
+            <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginBottom:12 }}>IDENTITÉ (ANONYMISÉE SUR LA PLATEFORME)</div>
+            <div style={FR} className="fr2">
+              <div><label>Prénom *</label><input placeholder="Jean" value={newOfficer.prenom} onChange={e=>setNewOfficer(p=>({...p,prenom:e.target.value}))} /></div>
+              <div><label>Nom *</label><input placeholder="Dupont" value={newOfficer.nom} onChange={e=>setNewOfficer(p=>({...p,nom:e.target.value}))} /></div>
+            </div>
+            <div style={FR} className="fr2">
+              <div><label>Grade</label>
+                <select value={newOfficer.grade} onChange={e=>setNewOfficer(p=>({...p,grade:e.target.value}))}>
+                  {GRADES.map(g=><option key={g}>{g} (Cat. {GRADES_CAT[g]})</option>)}
+                </select>
+              </div>
+              <div><label>Ancienneté (années)</label><input type="number" placeholder="5" min="0" max="40" value={newOfficer.annees} onChange={e=>setNewOfficer(p=>({...p,annees:e.target.value}))} /></div>
+            </div>
+            <div style={FR} className="fr2">
+              <div><label>Commune actuelle</label><input placeholder="Ex : Bordeaux (33)" value={newOfficer.commune} onChange={e=>setNewOfficer(p=>({...p,commune:e.target.value}))} /></div>
+              <div><label>Type d'employeur actuel</label>
+                <select value={newOfficer.typeEmployeur} onChange={e=>setNewOfficer(p=>({...p,typeEmployeur:e.target.value}))}>
+                  {TYPE_EMPLOYEUR.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Statut et origine */}
+            <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginTop:16, marginBottom:12 }}>STATUT ET ORIGINE</div>
+            <div style={FR} className="fr2">
+              <div><label>Situation actuelle *</label>
+                <select value={newOfficer.origine} onChange={e=>{
+                  const isLaureat = e.target.value === "Lauréat de concours (1er poste)";
+                  setNewOfficer(p=>({...p, origine:e.target.value, statut:isLaureat?"laureat":"titulaire"}));
+                }}>
+                  {ORIGINES.map(o=><option key={o}>{o}</option>)}
+                </select>
+              </div>
+              <div><label>Disponibilité</label>
+                <select value={newOfficer.dispo} onChange={e=>setNewOfficer(p=>({...p,dispo:e.target.value}))}>
+                  {["Immédiate","1 mois","3 mois","6 mois"].map(d=><option key={d}>{d}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Engagement de servir */}
+            {newOfficer.statut === "titulaire" && <>
+              <div style={FR} className="fr2">
                 <div>
-                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800 }}>Annonces des mairies</div>
-                  <p style={{ color:"#4A6080", fontSize:14, marginTop:4 }}>Publiees par des communes verifiees uniquement</p>
+                  <label>Date de titularisation</label>
+                  <input type="date" value={newOfficer.dateTitularisation} onChange={e=>setNewOfficer(p=>({...p,dateTitularisation:e.target.value}))} />
                 </div>
-                <button style={S.btnP} onClick={()=>{setRole("mairie");setView("inscription")}}>+ Publier une annonce</button>
-              </div>
-              <div style={{ display:"grid", gap:14 }}>
-                {annonces.map(a=>(
-                  <div key={a.id} style={{...S.card, padding:"22px 24px", display:"grid", gridTemplateColumns:"1fr auto", gap:20, alignItems:"start"}}>
-                    <div>
-                      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8, flexWrap:"wrap" }}>
-                        <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:20, fontWeight:700, color:"#E2E8F0" }}>{a.commune}</span>
-                        <span style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>{a.dept}</span>
-                        <span style={S.chip("#052e16","#4ade80","#14532d")}>Mairie verifiee</span>
-                        {a.urgence==="Urgent" && <span style={S.chip("#450a0a","#fca5a5","#7f1d1d")}>URGENT</span>}
-                      </div>
-                      <div style={{ fontSize:14, color:"#8FA3BB", marginBottom:10 }}>
-                        <strong style={{ color:"#60A5FA" }}>{a.besoin} poste(s)</strong> - {a.grade} - <strong style={{ color:"#E2E8F0" }}>{a.urgence}</strong>
-                      </div>
-                      <p style={{ fontSize:13, color:"#64748B", lineHeight:1.6 }}>{a.description}</p>
-                    </div>
-                    <div style={{ textAlign:"right", flexShrink:0 }}>
-                      <div style={{ fontSize:11, color:"#2D4A6A", marginBottom:10 }}>{a.date}</div>
-                      <button style={S.btnP} onClick={()=>setView("policiers")}>Voir les profils</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>}
-
-            {/* TARIFS */}
-            {view==="tarifs" && <div style={{ paddingTop:36, maxWidth:760, margin:"0 auto" }}>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, textAlign:"center", marginBottom:8 }}>Tarifs - Mairies verifiees</div>
-              <p style={{ textAlign:"center", color:"#4A6080", marginBottom:16 }}>Acces aux coordonnees reserve aux communes officiellement verifiees.</p>
-              {!verified && <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:10, padding:"14px 20px", marginBottom:32, textAlign:"center" }}>
-                <span style={{ color:"#fbbf24" }}>Votre mairie n'est pas encore verifiee. </span>
-                <span style={{ color:"#F59E0B", cursor:"pointer", textDecoration:"underline" }} onClick={()=>{setRole("mairie");setView("inscription")}}>Deposer un dossier</span>
-              </div>}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:20 }}>
-                {FORFAITS.map(f=>(
-                  <div key={f.id} style={{ background:"#0A1628", border:`2px solid ${f.color}${verified?"80":"30"}`, borderRadius:14, padding:24, position:"relative", opacity:verified?1:0.5, transition:"all .2s" }}>
-                    {f.badge && <div style={{ position:"absolute", top:-11, left:"50%", transform:"translateX(-50%)", background:f.color, color:"#fff", fontSize:11, fontWeight:700, padding:"3px 12px", borderRadius:20 }}>{f.badge}</div>}
-                    <div style={{ textAlign:"center", marginBottom:16 }}>
-                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:48, fontWeight:800, color:f.color, lineHeight:1 }}>{f.prix}&euro;</div>
-                      <div style={{ fontSize:12, color:"#64748B" }}>HT / forfait</div>
-                    </div>
-                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:700, color:"#E2E8F0", textAlign:"center", marginBottom:14 }}>{f.label} - {f.vues} contacts</div>
-                    {["Validite 12 mois","Acces immediat","Sans abonnement"].map(item=>(
-                      <div key={item} style={{ display:"flex", gap:8, marginBottom:7, fontSize:13, color:"#8FA3BB" }}>
-                        <span style={{ color:f.color }}>v</span>{item}
-                      </div>
-                    ))}
-                    <button style={{...S.btnP, width:"100%", marginTop:16, background:`linear-gradient(135deg,${f.color},${f.color}cc)`, opacity:verified?1:0.4}}
-                      onClick={()=>buyForfait(f)} disabled={!verified}>
-                      {verified?`Acheter - ${f.prix}EUR`:"Verification requise"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>}
-
-            {/* ADMIN */}
-            {view==="admin" && <div style={{ paddingTop:36 }}>
-              {!adminOk ? <div style={{ maxWidth:380, margin:"60px auto", textAlign:"center" }}>
-                <div style={{ fontSize:48, marginBottom:16 }}>&#x2699;&#xFE0F;</div>
-                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, marginBottom:8 }}>Administration</div>
-                <p style={{ color:"#4A6080", fontSize:14, marginBottom:24 }}>Espace reserve a l'equipe PM-EMPLOI</p>
-                <input type="password" placeholder="Code administrateur" value={pin} onChange={e=>setPin(e.target.value)} style={{ textAlign:"center", marginBottom:14, fontSize:16, letterSpacing:"4px" }}
-                  onKeyDown={e=>{if(e.key==="Enter"){if(pin==="PMadmin2026!")setAdminOk(true);else notify("Code incorrect","error");}}} />
-                <button style={{...S.btnP, width:"100%"}} onClick={()=>{if(pin==="PMadmin2026!")setAdminOk(true);else notify("Code incorrect","error");}}>Acceder</button>
-              </div> : <div>
-                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, marginBottom:24 }}>
-                  Verification des Mairies
-                  {enAttente>0 && <span style={{ fontSize:16, color:"#F59E0B", fontWeight:500, marginLeft:12 }}>{enAttente} dossier(s) en attente</span>}
-                </div>
-                <div style={{ display:"grid", gap:16 }}>
-                  {demandes.map(d=>{
-                    const bs = statutStyle(d.statut);
-                    const alertes = [];
-                    if (isBadEmail(d.email)) alertes.push("Email non institutionnel");
-                    if (!d.justificatif) alertes.push("Justificatif manquant");
-                    if (d.siret.replace(/\s/g,"").length!==14) alertes.push("SIRET invalide");
-                    if (!d.fonction) alertes.push("Fonction manquante");
-                    return (
-                      <div key={d.id} style={{...S.card, padding:"20px 24px", borderLeft:`3px solid ${d.statut==="validee"?"#22c55e":d.statut==="rejetee"?"#EF4444":"#F59E0B"}`}}>
-                        <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:20, alignItems:"start" }}>
-                          <div>
-                            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12, flexWrap:"wrap" }}>
-                              <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:20, fontWeight:700, color:"#E2E8F0" }}>Mairie de {d.commune}</span>
-                              <span style={S.chip(bs.bg,bs.color,bs.border)}>{bs.label}</span>
-                            </div>
-                            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:10, marginBottom:12 }}>
-                              {[["Responsable",`${d.nomContact}${d.fonction?" - "+d.fonction:""}`],["Email",d.email],["SIRET",d.siret],["Justificatif",d.justificatif||"Non fourni"]].map(([label,val])=>(
-                                <div key={label}>
-                                  <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, marginBottom:2 }}>{label}</div>
-                                  <div style={{ fontSize:13, color:val==="Non fourni"?"#EF4444":"#8FA3BB" }}>{val}</div>
-                                </div>
-                              ))}
-                            </div>
-                            {alertes.length>0 && <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                              {alertes.map(a=><span key={a} style={S.chip("#450a0a","#fca5a5","#7f1d1d")}>⚠ {a}</span>)}
-                            </div>}
-                            {alertes.length===0 && d.statut==="en_attente" && <span style={S.chip("#052e16","#4ade80","#14532d")}>Dossier complet - Pret a valider</span>}
-                            {d.motifRejet && <div style={{ background:"#450a0a", border:"1px solid #7f1d1d", borderRadius:6, padding:"8px 12px", marginTop:10, fontSize:12, color:"#fca5a5" }}>Motif : {d.motifRejet}</div>}
-                          </div>
-                          {d.statut==="en_attente" && <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
-                            <button style={S.btnOk} onClick={()=>valider(d.id)}>Valider</button>
-                            <button style={S.btnErr} onClick={()=>setModal({type:"rejeter",id:d.id})}>Rejeter</button>
-                          </div>}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>}
-            </div>}
-
-            {/* INSCRIPTION POLICIER */}
-            {view==="inscription" && role==="policier" && <div style={{ paddingTop:36, maxWidth:680, margin:"0 auto" }}>
-              <button style={S.btnG} onClick={()=>setView("accueil")}>Retour</button>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, margin:"16px 0 6px" }}>Inscription Policier Municipal</div>
-              <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"10px 16px", marginBottom:20, fontSize:13, color:"#86efac" }}>
-                Protection garantie : votre nom sera anonymise. Coordonnees accessibles uniquement aux mairies verifiees.
-              </div>
-              {(newOfficer.prenom||newOfficer.nom) && <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"10px 16px", marginBottom:20, fontSize:13 }}>
-                Apercu public : <strong style={{ color:"#60A5FA" }}>
-                  {newOfficer.prenom?newOfficer.prenom[0]+".":"J."}{" "}
-                  {newOfficer.nom?(newOfficer.nom[0]+(newOfficer.nom.length>2?"*".repeat(newOfficer.nom.length-2)+newOfficer.nom[newOfficer.nom.length-1]:"*")):"D***t"}
-                </strong>
-              </div>}
-              <div style={{...S.card, padding:28}}>
-                <div className="fr">
-                  <div><label>Prenom *</label><input placeholder="Jean" value={newOfficer.prenom} onChange={e=>setNewOfficer(p=>({...p,prenom:e.target.value}))} /></div>
-                  <div><label>Nom *</label><input placeholder="Dupont" value={newOfficer.nom} onChange={e=>setNewOfficer(p=>({...p,nom:e.target.value}))} /></div>
-                </div>
-                <div className="fr">
-                  <div><label>Grade</label><select value={newOfficer.grade} onChange={e=>setNewOfficer(p=>({...p,grade:e.target.value}))}>{GRADES.map(g=><option key={g}>{g}</option>)}</select></div>
-                  <div><label>Anciennete (annees)</label><input type="number" placeholder="5" value={newOfficer.annees} onChange={e=>setNewOfficer(p=>({...p,annees:e.target.value}))} /></div>
-                </div>
-                <div style={{ marginBottom:14 }}><label>Commune actuelle</label><input placeholder="Ex : Bordeaux (33)" value={newOfficer.commune} onChange={e=>setNewOfficer(p=>({...p,commune:e.target.value}))} /></div>
-                <div style={{ marginBottom:14 }}><label>Disponibilite</label>
-                  <select value={newOfficer.dispo} onChange={e=>setNewOfficer(p=>({...p,dispo:e.target.value}))}>
-                    {["Immediate","1 mois","3 mois","6 mois"].map(d=><option key={d}>{d}</option>)}
+                <div>
+                  <label>Engagement de servir signé ?</label>
+                  <select value={newOfficer.engagementSigne} onChange={e=>setNewOfficer(p=>({...p,engagementSigne:e.target.value}))}>
+                    <option>Non</option><option>Oui</option><option>Je ne sais pas</option>
                   </select>
                 </div>
-                <div style={{ marginBottom:14 }}><label>Regions souhaitees</label>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8 }}>
-                    {REGIONS.map(r=><span key={r} className={"tag"+(newOfficer.regions.includes(r)?" sel":"")}
-                      onClick={()=>setNewOfficer(p=>({...p,regions:p.regions.includes(r)?p.regions.filter(x=>x!==r):[...p.regions,r]}))}>{r}</span>)}
-                  </div>
-                </div>
-                <div style={{ marginBottom:14 }}><label>Specialites</label>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8 }}>
-                    {SPECS.map(s=><span key={s} className={"tag"+(newOfficer.specialites.includes(s)?" sel":"")}
-                      onClick={()=>setNewOfficer(p=>({...p,specialites:p.specialites.includes(s)?p.specialites.filter(x=>x!==s):[...p.specialites,s]}))}>{s}</span>)}
-                  </div>
-                </div>
-                <div className="fr" style={{ marginTop:14 }}>
-                  <div><label>Email * (confidentiel)</label><input type="email" placeholder="jean.dupont@mairie.fr" value={newOfficer.email} onChange={e=>setNewOfficer(p=>({...p,email:e.target.value}))} /></div>
-                  <div><label>Telephone (confidentiel)</label><input placeholder="06 00 00 00 00" value={newOfficer.tel} onChange={e=>setNewOfficer(p=>({...p,tel:e.target.value}))} /></div>
-                </div>
-                <div style={{ display:"flex", gap:10, marginTop:24 }}>
-                  <button style={{...S.btnP, flex:1, padding:"12px"}} onClick={saveOfficer}>Creer mon profil anonyme</button>
-                  <button style={S.btnG} onClick={()=>setView("accueil")}>Annuler</button>
-                </div>
               </div>
-            </div>}
+              {(() => {
+                const eng = engagementRestant(newOfficer.dateTitularisation, newOfficer.engagementSigne);
+                if (!eng) return null;
+                return <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:6, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#fbbf24" }}>
+                  ⏳ Engagement de servir actif jusqu'au {eng.fin.toLocaleDateString("fr-FR")} — en cas de mutation, remboursement de formation estimé : <strong>{eng.remb.toLocaleString("fr-FR")} €</strong> (à la charge de la commune d'accueil)
+                </div>;
+              })()}
+            </>}
 
-            {/* INSCRIPTION MAIRIE */}
-            {view==="inscription" && role==="mairie" && <div style={{ paddingTop:36, maxWidth:700, margin:"0 auto" }}>
-              <button style={S.btnG} onClick={()=>setView("accueil")}>Retour</button>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, margin:"16px 0 6px" }}>Demande de verification - Mairie</div>
-              <p style={{ color:"#4A6080", marginBottom:20 }}>Dossier examine manuellement sous 48h ouvrees.</p>
-              <div style={{...S.card, padding:"18px 22px", marginBottom:24, borderLeft:"3px solid #F59E0B"}}>
-                <div style={{ fontWeight:700, fontSize:14, color:"#F59E0B", marginBottom:10 }}>Conditions de verification</div>
-                {[["Email institutionnel","@mairie-xxx.fr, @ville-xxx.fr - Les emails grand public sont refuses."],
-                  ["SIRET 14 chiffres","Verifie sur la base SIRENE. SIRET invalide = rejet immediat."],
-                  ["Fonction habilitee","Maire, DGS, DRH, Chef de service PM ou delegation de signature."],
-                  ["Justificatif officiel","Arrete municipal, delegation ou extrait de deliberation."],
-                ].map(([t,d])=><div key={t} style={{ marginBottom:8 }}>
-                  <div style={{ fontSize:13, color:"#E2E8F0", fontWeight:600 }}>{t}</div>
-                  <div style={{ fontSize:12, color:"#64748B" }}>{d}</div>
-                </div>)}
-              </div>
-              <div style={{...S.card, padding:28}}>
-                <div className="fr">
-                  <div><label>Commune *</label><input placeholder="Ex : Sete" value={newMairie.commune} onChange={e=>setNewMairie(p=>({...p,commune:e.target.value}))} /></div>
-                  <div><label>Departement</label><input placeholder="Ex : Herault (34)" value={newMairie.dept} onChange={e=>setNewMairie(p=>({...p,dept:e.target.value}))} /></div>
-                </div>
-                <div style={{ marginBottom:14 }}>
-                  <label>SIRET (14 chiffres) *</label>
-                  <input placeholder="21340270600017" maxLength={14} value={newMairie.siret} onChange={e=>setNewMairie(p=>({...p,siret:e.target.value.replace(/\D/g,"")}))}
-                    style={{ borderColor:newMairie.siret&&newMairie.siret.length!==14?"#EF4444":"#1E3A5F" }} />
-                  {newMairie.siret&&newMairie.siret.length!==14&&<div style={{ fontSize:11, color:"#EF4444", marginTop:4 }}>{newMairie.siret.length}/14 chiffres</div>}
-                </div>
-                <div className="fr">
-                  <div><label>Nom et Prenom *</label><input placeholder="Marie Dupont" value={newMairie.nomContact} onChange={e=>setNewMairie(p=>({...p,nomContact:e.target.value}))} /></div>
-                  <div><label>Fonction *</label>
-                    <select value={newMairie.fonction} onChange={e=>setNewMairie(p=>({...p,fonction:e.target.value}))}>
-                      <option value="">Choisir...</option>
-                      {["Maire","Adjoint au Maire","DGS","DRH","Chef de service PM","Secretaire General","Delegataire identifie"].map(f=><option key={f}>{f}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="fr">
-                  <div>
-                    <label>Email institutionnel * (pas Gmail/Yahoo)</label>
-                    <input type="email" placeholder="drh@mairie-sete.fr" value={newMairie.email} onChange={e=>setNewMairie(p=>({...p,email:e.target.value}))}
-                      style={{ borderColor:newMairie.email&&isBadEmail(newMairie.email)?"#EF4444":"#1E3A5F" }} />
-                    {newMairie.email&&isBadEmail(newMairie.email)&&<div style={{ fontSize:11, color:"#EF4444", marginTop:4 }}>Email refuse automatiquement</div>}
-                  </div>
-                  <div><label>Telephone</label><input placeholder="04 67 74 74 74" value={newMairie.tel} onChange={e=>setNewMairie(p=>({...p,tel:e.target.value}))} /></div>
-                </div>
-                <div style={{ marginBottom:14 }}>
-                  <label>Justificatif *</label>
-                  <input placeholder="Ex : Arrete_PM_2026.pdf" value={newMairie.justificatif} onChange={e=>setNewMairie(p=>({...p,justificatif:e.target.value}))} />
-                </div>
-                <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"12px 16px", marginBottom:20, fontSize:13, color:"#8FA3BB" }}>
-                  En soumettant, vous certifiez agir au nom d'une collectivite territoriale francaise. Toute usurpation sera signalee aux autorites.
-                </div>
-                <div style={{ display:"flex", gap:10 }}>
-                  <button style={{...S.btnP, flex:1, padding:"12px"}} onClick={saveMairie}>Soumettre le dossier</button>
-                  <button style={S.btnG} onClick={()=>setView("accueil")}>Annuler</button>
-                </div>
-              </div>
-            </div>}
-          </main>
+            {/* Priorités légales */}
+            <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginTop:16, marginBottom:8 }}>PRIORITÉS LÉGALES DE MUTATION (art. L.512-26 CGFP)</div>
+            <div style={{ fontSize:12, color:"#64748B", marginBottom:10 }}>Ces critères donnent droit à un examen prioritaire de votre demande. Cochez si applicable.</div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
+              {[["conjoint","👨‍👩‍👧 Séparé(e) du conjoint/PACS pour raisons pro"],["rqth","♿ Travailleur handicapé (RQTH)"],["aidant","🤝 Proche aidant"]].map(([val,label])=>(
+                <span key={val} style={S.tag(newOfficer.prioriteLegale.includes(val))} onClick={()=>setNewOfficer(p=>({...p,prioriteLegale:toggleArr(p.prioriteLegale,val)}))}>
+                  {label}
+                </span>
+              ))}
+            </div>
 
-          {/* MODALS */}
-          {modal && modal.type==="nv" && <div className="overlay" onClick={()=>setModal(null)}>
-            <div className="modal" style={{ textAlign:"center" }} onClick={e=>e.stopPropagation()}>
-              <div style={{ fontSize:52, marginBottom:16 }}>&#x1F512;</div>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:24, fontWeight:800, marginBottom:10 }}>Acces restreint</div>
-              <p style={{ color:"#8FA3BB", fontSize:14, lineHeight:1.7, marginBottom:24 }}>L'acces aux profils est reserve aux communes officiellement verifiees. Cette restriction protege les agents contre tout contact malveillant.</p>
-              <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
-                <button style={S.btnP} onClick={()=>{setModal(null);setRole("mairie");setView("inscription")}}>Deposer un dossier</button>
-                <button style={S.btnG} onClick={()=>setModal(null)}>Fermer</button>
+            {/* Mobilité souhaitée */}
+            <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginTop:6, marginBottom:12 }}>MOBILITÉ ET SOUHAITS</div>
+            <div style={FR} className="fr2">
+              <div><label>Type de mobilité souhaité</label>
+                <select value={newOfficer.typeMobilite} onChange={e=>setNewOfficer(p=>({...p,typeMobilite:e.target.value}))}>
+                  {TYPE_MOBILITE.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div style={{ display:"flex", flexDirection:"column" }}></div>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label>Régions souhaitées</label>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:7 }}>
+                {REGIONS.map(r=><span key={r} style={S.tag(newOfficer.regions.includes(r))} onClick={()=>setNewOfficer(p=>({...p,regions:toggleArr(p.regions,r)}))}>{r}</span>)}
               </div>
             </div>
-          </div>}
-
-          {modal && modal.type==="price" && <div className="overlay" onClick={()=>setModal(null)}>
-            <div className="modal" onClick={e=>e.stopPropagation()}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-                <div>
-                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:24, fontWeight:800 }}>Choisissez un forfait</div>
-                  <p style={{ fontSize:13, color:"#4A6080", marginTop:4 }}>1 vue = 1 contact deverrouille</p>
-                </div>
-                <button style={S.btnG} onClick={()=>setModal(null)}>X</button>
-              </div>
-              <div style={{ display:"grid", gap:14 }}>
-                {FORFAITS.map(f=>(
-                  <div key={f.id} style={{ background:"#0A1628", border:`2px solid ${f.color}40`, borderRadius:12, padding:"18px 20px", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor=f.color}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor=f.color+"40"}}
-                    onClick={()=>buyForfait(f)}>
-                    <div>
-                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800, color:f.color }}>{f.label}</div>
-                      <div style={{ fontSize:13, color:"#64748B" }}>{f.vues} contacts - {f.desc}</div>
-                    </div>
-                    <div style={{ textAlign:"right" }}>
-                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, color:f.color }}>{f.prix}&euro;</div>
-                      <div style={{ fontSize:11, color:"#4A6080" }}>HT</div>
-                    </div>
-                  </div>
-                ))}
+            <div style={{ marginBottom:14 }}>
+              <label>Spécialités</label>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:5, marginTop:7 }}>
+                {SPECIALITES.map(s=><span key={s} style={S.tag(newOfficer.specialites.includes(s))} onClick={()=>setNewOfficer(p=>({...p,specialites:toggleArr(p.specialites,s)}))}>{s}</span>)}
               </div>
             </div>
-          </div>}
 
-          {modal && modal.type==="rejeter" && <div className="overlay" onClick={()=>setModal(null)}>
-            <div className="modal" onClick={e=>e.stopPropagation()}>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800, color:"#fca5a5", marginBottom:10 }}>Rejeter la demande</div>
-              <p style={{ fontSize:13, color:"#8FA3BB", marginBottom:16 }}>Le motif sera communique au demandeur.</p>
-              <textarea rows={4} placeholder="Ex : Email non institutionnel. SIRET a verifier." value={motifRejet} onChange={e=>setMotifRejet(e.target.value)} style={{ marginBottom:16 }} />
-              <div style={{ display:"flex", gap:10 }}>
-                <button style={{...S.btnErr, flex:1, padding:"11px"}} onClick={()=>rejeter(modal.id)}>Confirmer le rejet</button>
-                <button style={S.btnG} onClick={()=>{setModal(null);setMotifRejet("");}}>Annuler</button>
+            {/* Coordonnées */}
+            <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginTop:6, marginBottom:12 }}>COORDONNÉES (CONFIDENTIELLES)</div>
+            <div style={FR} className="fr2">
+              <div><label>Email professionnel *</label><input type="email" placeholder="jean.dupont@mairie.fr" value={newOfficer.email} onChange={e=>setNewOfficer(p=>({...p,email:e.target.value}))} /></div>
+              <div><label>Téléphone</label><input placeholder="06 00 00 00 00" value={newOfficer.tel} onChange={e=>setNewOfficer(p=>({...p,tel:e.target.value}))} /></div>
+            </div>
+
+            <div style={{ display:"flex", gap:10, marginTop:20 }}>
+              <button style={{ ...S.btnP, flex:1, padding:"12px" }} onClick={sauvegarderPolicier}>✅ Créer mon profil anonyme</button>
+              <button style={S.btnG} onClick={()=>setView("accueil")}>Annuler</button>
+            </div>
+          </div>
+        </div>}
+
+        {/* ══ INSCRIPTION MAIRIE ══════════════════════════════════ */}
+        {view==="inscription" && role==="mairie" && <div style={{ paddingTop:36, maxWidth:700, margin:"0 auto" }}>
+          <button style={{ ...S.btnG, marginBottom:22, fontSize:12 }} onClick={()=>setView("accueil")}>← Retour</button>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:6 }}>🏛️ Demande de vérification</div>
+          <p style={{ color:"#4A6080", marginBottom:20 }}>Commune, EPCI, Syndicat intercommunal ou CDG — dossier examiné sous 48h ouvrées.</p>
+
+          {/* Critères */}
+          <div style={{ ...S.card, padding:"16px 20px", marginBottom:22, borderLeft:"3px solid #F59E0B" }}>
+            <div style={{ fontWeight:700, fontSize:13, color:"#F59E0B", marginBottom:10 }}>📋 Conditions obligatoires</div>
+            {[["Email institutionnel","@mairie-xxx.fr, @cc-xxx.fr — Gmail/Yahoo automatiquement refusés"],
+              ["SIRET 14 chiffres","Vérifié sur base SIRENE — SIRET invalide = rejet immédiat"],
+              ["Fonction habilitée","Maire, DGS, DRH, Chef service PM, Secrétaire Général ou délégataire"],
+              ["Justificatif officiel","Arrêté municipal, délégation de signature ou extrait de délibération"],
+            ].map(([t,d])=>(
+              <div key={t} style={{ marginBottom:8 }}>
+                <span style={{ fontSize:13, color:"#E2E8F0", fontWeight:600 }}>✅ {t}</span>
+                <span style={{ fontSize:12, color:"#64748B", marginLeft:6 }}>— {d}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ ...S.card, padding:26 }}>
+            <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginBottom:12 }}>IDENTIFICATION DE LA COLLECTIVITÉ</div>
+            <div style={FR} className="fr2">
+              <div><label>Nom *</label><input placeholder="Ex : Sète" value={newMairie.commune} onChange={e=>setNewMairie(p=>({...p,commune:e.target.value}))} /></div>
+              <div><label>Département</label><input placeholder="Ex : Hérault (34)" value={newMairie.dept} onChange={e=>setNewMairie(p=>({...p,dept:e.target.value}))} /></div>
+            </div>
+            <div style={FR} className="fr2">
+              <div><label>Type d'employeur *</label>
+                <select value={newMairie.typeEmployeur} onChange={e=>setNewMairie(p=>({...p,typeEmployeur:e.target.value}))}>
+                  {TYPE_EMPLOYEUR.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label>SIRET (14 chiffres) *</label>
+                <input placeholder="21340270600017" maxLength={14} value={newMairie.siret} onChange={e=>setNewMairie(p=>({...p,siret:e.target.value.replace(/\D/g,"")}))}
+                  style={{ borderColor:newMairie.siret&&newMairie.siret.length!==14?"#EF4444":"#1E3A5F" }} />
+                {newMairie.siret&&newMairie.siret.length!==14&&<div style={{ fontSize:11, color:"#EF4444", marginTop:3 }}>{newMairie.siret.length}/14 chiffres</div>}
               </div>
             </div>
-          </div>}
 
-          <footer style={{ borderTop:"1px solid #1A2E4A", padding:"20px 24px", textAlign:"center" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, marginBottom:6 }}>
-              <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:16, fontWeight:700, color:"#E2E8F0" }}>PM&#x2022;EMPLOI</span>
+            <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginTop:16, marginBottom:12 }}>RESPONSABLE DE LA DEMANDE</div>
+            <div style={FR} className="fr2">
+              <div><label>Nom et Prénom *</label><input placeholder="Marie Dupont" value={newMairie.nomContact} onChange={e=>setNewMairie(p=>({...p,nomContact:e.target.value}))} /></div>
+              <div><label>Fonction *</label>
+                <select value={newMairie.fonction} onChange={e=>setNewMairie(p=>({...p,fonction:e.target.value}))}>
+                  <option value="">Choisir...</option>
+                  {FONCTIONS_MAIRIE.map(f=><option key={f}>{f}</option>)}
+                </select>
+              </div>
             </div>
-            <p style={{ fontSize:12, color:"#2D4A6A" }}>Acces reserve aux mairies verifiees - Identites anonymisees - Conforme RGPD - 2026</p>
-          </footer>
+            <div style={FR} className="fr2">
+              <div>
+                <label>Email institutionnel * <span style={{ color:"#EF4444", fontSize:11 }}>— pas Gmail/Yahoo</span></label>
+                <input type="email" placeholder="drh@mairie-sete.fr" value={newMairie.email} onChange={e=>setNewMairie(p=>({...p,email:e.target.value}))}
+                  style={{ borderColor:newMairie.email&&isBadEmail(newMairie.email)?"#EF4444":"#1E3A5F" }} />
+                {newMairie.email&&isBadEmail(newMairie.email)&&<div style={{ fontSize:11, color:"#EF4444", marginTop:3 }}>Email refusé automatiquement</div>}
+              </div>
+              <div><label>Téléphone</label><input placeholder="04 67 74 74 74" value={newMairie.tel} onChange={e=>setNewMairie(p=>({...p,tel:e.target.value}))} /></div>
+            </div>
+            <div style={{ marginBottom:16 }}>
+              <label>Justificatif *</label>
+              <input placeholder="Ex : Arrêté_PM_2026.pdf, Délégation_DRH.pdf" value={newMairie.justificatif} onChange={e=>setNewMairie(p=>({...p,justificatif:e.target.value}))} />
+            </div>
+
+            {newMairie.typeEmployeur === "Centre de Gestion (CDG)" && (
+              <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:13, color:"#8FA3BB" }}>
+                ℹ️ Un abonnement CDG couvre <strong style={{ color:"#E2E8F0" }}>toutes les communes affiliées</strong> de votre département. Dès 399€/mois — soit 1,16€/commune/mois pour un CDG de 344 communes.
+              </div>
+            )}
+            {newMairie.typeEmployeur === "EPCI à fiscalité propre" && (
+              <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:13, color:"#8FA3BB" }}>
+                ℹ️ Pour un EPCI, l'interlocuteur de mutation sortante est le <strong style={{ color:"#E2E8F0" }}>Président de l'EPCI</strong> (et non le Maire de la commune d'affectation). La mobilité interne entre communes membres ne constitue pas une mutation formelle.
+              </div>
+            )}
+            {newMairie.typeEmployeur === "Syndicat intercommunal" && (
+              <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"10px 14px", marginBottom:14, fontSize:13, color:"#8FA3BB" }}>
+                ℹ️ Pour un syndicat intercommunal, c'est le <strong style={{ color:"#E2E8F0" }}>bureau syndical (organe collégial)</strong> qui statue sur les mutations sortantes. Les délais de mobilité interne suivent les statuts propres du syndicat (variables).
+              </div>
+            )}
+
+            <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"10px 14px", marginBottom:18, fontSize:12, color:"#8FA3BB" }}>
+              ⚖️ En soumettant ce formulaire, vous certifiez agir au nom d'une collectivité territoriale française. Toute usurpation sera signalée aux autorités compétentes.
+            </div>
+
+            {/* Publier annonce */}
+            <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginTop:4, marginBottom:12 }}>PUBLIER UNE ANNONCE (OPTIONNEL)</div>
+            <div style={FR} className="fr2">
+              <div><label>Poste recherché</label>
+                <select value={newAnnonce.grade} onChange={e=>setNewAnnonce(p=>({...p,grade:e.target.value}))}>
+                  {["Tous grades",...GRADES].map(g=><option key={g}>{g}</option>)}
+                </select>
+              </div>
+              <div><label>Nombre de postes</label><input type="number" min="1" max="20" value={newAnnonce.besoin} onChange={e=>setNewAnnonce(p=>({...p,besoin:e.target.value}))} /></div>
+            </div>
+            <div style={FR} className="fr2">
+              <div><label>Délai souhaité</label>
+                <select value={newAnnonce.urgence} onChange={e=>setNewAnnonce(p=>({...p,urgence:e.target.value}))}>
+                  <option value="">Choisir...</option>
+                  {["Urgent","1 mois","2 mois","3 mois","6 mois","Saison estivale"].map(d=><option key={d}>{d}</option>)}
+                </select>
+              </div>
+              <div><label>Région</label>
+                <select value={newAnnonce.region} onChange={e=>setNewAnnonce(p=>({...p,region:e.target.value}))}>
+                  <option value="">Choisir...</option>
+                  {REGIONS.map(r=><option key={r}>{r}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{ marginBottom:16 }}>
+              <label>Description du poste</label>
+              <textarea rows={3} placeholder="Décrivez le poste, les avantages, le contexte..." value={newAnnonce.description} onChange={e=>setNewAnnonce(p=>({...p,description:e.target.value}))} style={{ resize:"vertical" }} />
+            </div>
+
+            <div style={{ display:"flex", gap:10 }}>
+              <button style={{ ...S.btnP, flex:1, padding:"12px" }} onClick={()=>{
+                soumettreMailrie();
+                if (newAnnonce.urgence && newAnnonce.commune === "") {
+                  setNewAnnonce(p=>({...p, commune:newMairie.commune, dept:newMairie.dept, typeEmployeur:newMairie.typeEmployeur}));
+                }
+                if (newAnnonce.urgence) setTimeout(()=>publierAnnonce(), 100);
+              }}>📤 Soumettre le dossier</button>
+              <button style={S.btnG} onClick={()=>setView("accueil")}>Annuler</button>
+            </div>
+          </div>
+        </div>}
+      </main>
+
+      {/* ═══════ MODALS ═══════ */}
+
+      {/* Non vérifiée */}
+      {modal?.type==="non_verifiee" && <div className="overlay" onClick={()=>setModal(null)}>
+        <div className="modal" style={{ textAlign:"center" }} onClick={e=>e.stopPropagation()}>
+          <div style={{ fontSize:50, marginBottom:14 }}>🔒</div>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800, marginBottom:10 }}>Accès restreint</div>
+          <p style={{ color:"#8FA3BB", fontSize:14, lineHeight:1.7, marginBottom:20 }}>L'accès aux profils est réservé aux <strong style={{ color:"#E2E8F0" }}>collectivités officiellement vérifiées</strong>. Cette restriction protège les agents contre tout contact non autorisé.</p>
+          <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
+            <button style={S.btnP} onClick={()=>{setModal(null);setRole("mairie");setView("inscription")}}>🏛️ Déposer un dossier</button>
+            <button style={S.btnG} onClick={()=>setModal(null)}>Fermer</button>
+          </div>
         </div>
-      );
-    }
+      </div>}
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
-</body>
-</html>
+      {/* Abonnement */}
+      {modal?.type==="abonnement" && <div className="overlay" onClick={()=>setModal(null)}>
+        <div className="modal" onClick={e=>e.stopPropagation()}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+            <div>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800 }}>💳 Choisissez votre abonnement</div>
+              <p style={{ fontSize:12, color:"#4A6080", marginTop:4 }}>Renouvellement mensuel automatique · Résiliation à tout moment</p>
+            </div>
+            <button style={{ ...S.btnG, padding:"5px 10px" }} onClick={()=>setModal(null)}>✕</button>
+          </div>
+          <div style={{ display:"flex", justifyContent:"center", gap:0, marginBottom:16 }}>
+            {["mensuel","annuel"].map(f=>(
+              <button key={f} onClick={()=>setFacturation(f)} style={{ padding:"7px 18px", background:facturation===f?"#1D4ED8":"#0A1628", color:facturation===f?"white":"#94A3B8", border:"1px solid #1E3A5F", cursor:"pointer", fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:12, borderRadius:f==="mensuel"?"6px 0 0 6px":"0 6px 6px 0" }}>
+              {f==="mensuel"?"Mensuel":"Annuel — jusqu'à –17%"}
+              </button>
+            ))}
+          </div>
+          <div style={{ display:"grid", gap:10 }}>
+            {ABONNEMENTS.map(ab=>{
+              const prix = facturation==="annuel" ? Math.round(ab.prixAnnuel/12) : ab.prix;
+              const suffixe = facturation==="annuel" ? `${ab.prixAnnuel.toLocaleString("fr-FR")} €/an (−${ab.remisePct}%)` : `${prix} €/mois`;
+              return (
+                <div key={ab.id} style={{ background:"#0A1628", border:`2px solid ${ab.color}40`, borderRadius:10, padding:"14px 16px", cursor:"pointer", transition:"all .15s" }}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=ab.color;e.currentTarget.style.transform="translateX(4px)"}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=ab.color+"40";e.currentTarget.style.transform="translateX(0)"}}
+                  onClick={()=>souscribreAbonnement(ab)}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div>
+                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:800, color:ab.color }}>{ab.label}</div>
+                      <div style={{ fontSize:12, color:"#64748B", marginTop:2 }}>{ab.cible} · {ab.illimite?"Contacts illimités":`${ab.contactsMois} contacts/mois`}</div>
+                    </div>
+                    <div style={{ textAlign:"right", flexShrink:0 }}>
+                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:24, fontWeight:800, color:ab.color }}>{prix} €</div>
+                      <div style={{ fontSize:10, color:"#4A6080" }}>{suffixe}</div>
+                    </div>
+                  </div>
+                  {ab.id==="essentiel" && (
+                    <div style={{ marginTop:8, textAlign:"right" }}>
+                      <span style={{ fontSize:10, background:`${ab.color}22`, color:ab.color, padding:"2px 8px", borderRadius:8, fontWeight:700 }}>⭐ Le plus choisi</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {/* Commission */}
+          <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:10, padding:"12px 16px", marginTop:12 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div>
+                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:16, fontWeight:700, color:"#F59E0B" }}>Commission recrutement réussi</div>
+                <div style={{ fontSize:12, color:"#92400e", marginTop:2 }}>Sans abonnement · Facturation à la mise en poste</div>
+              </div>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800, color:"#F59E0B" }}>250 €</div>
+            </div>
+          </div>
+          <p style={{ fontSize:11, color:"#2D4A6A", textAlign:"center", marginTop:12 }}>Paiement sécurisé · Accès immédiat · Sans engagement sur le plan Découverte</p>
+        </div>
+      </div>}
+
+      {/* Rejet admin */}
+      {modal?.type==="rejeter" && <div className="overlay" onClick={()=>setModal(null)}>
+        <div className="modal" onClick={e=>e.stopPropagation()}>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:20, fontWeight:800, color:"#fca5a5", marginBottom:10 }}>❌ Rejeter la demande</div>
+          <p style={{ fontSize:13, color:"#8FA3BB", marginBottom:14 }}>Le motif sera communiqué au demandeur pour lui permettre de corriger son dossier.</p>
+          <textarea rows={4} placeholder="Ex : Email non institutionnel. Merci d'utiliser votre email @mairie-xxx.fr." value={motifRejet} onChange={e=>setMotifRejet(e.target.value)} style={{ marginBottom:14, resize:"vertical" }} />
+          <div style={{ display:"flex", gap:10 }}>
+            <button style={{ ...S.btnErr, flex:1, padding:"11px" }} onClick={()=>rejeterMairie(modal.id)}>Confirmer le rejet</button>
+            <button style={S.btnG} onClick={()=>{setModal(null);setMotifRejet("")}}>Annuler</button>
+          </div>
+        </div>
+      </div>}
+
+      <footer style={{ borderTop:"1px solid #1A2E4A", padding:"18px 24px", textAlign:"center" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, marginBottom:5 }}>
+          <span style={{ fontSize:16 }}>🛡️</span>
+          <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:15, fontWeight:700, color:"#E2E8F0" }}>PM•EMPLOI</span>
+        </div>
+        <p style={{ fontSize:11, color:"#2D4A6A" }}>Accès mairies vérifiées · Identités anonymisées · Alertes légales métier · Abonnement mensuel · Conforme RGPD · © 2026 CAPDIM</p>
+      </footer>
+    </div>
+  );
+}
