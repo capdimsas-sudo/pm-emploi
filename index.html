@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PM•EMPLOI — La bourse nationale des policiers municipaux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink:      #06101E;
+      --ink-mid:  #0D1F38;
+      --ink-soft: #162B4A;
+      --blue:     #1A3FC4;
+      --blue-lt:  #2D55E0;
+      --gold:     #C8973A;
+      --gold-lt:  #E5B04A;
+      --white:    #FFFFFF;
+      --fog:      #F0EDE8;
+      --fog-dark: #E2DDD6;
+      --text:     #06101E;
+      --muted:    #6B7A8D;
+      --border:   rgba(6,16,30,0.09);
+      --r: 14px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--fog); color: var(--text); overflow-x: hidden; }
+
+    .tricolor { height: 3px; background: linear-gradient(90deg,#002395 33.33%,#fff 33.33%,#fff 66.66%,#ED2939 66.66%); position:fixed; top:0; left:0; right:0; z-index:200; }
+
+    nav { position:fixed; top:3px; left:0; right:0; z-index:100; height:62px; display:flex; align-items:center; justify-content:space-between; padding:0 40px; background:rgba(6,16,30,0.97); backdrop-filter:blur(16px); border-bottom:1px solid rgba(255,255,255,0.07); }
+    .logo { display:flex; align-items:center; gap:10px; font-family:'DM Serif Display',serif; font-size:1.2rem; color:var(--white); text-decoration:none; }
+    .logo-icon { width:32px; height:32px; border-radius:7px; background:linear-gradient(135deg,var(--blue),var(--blue-lt)); display:flex; align-items:center; justify-content:center; font-size:15px; }
+    .logo em { font-style:normal; color:var(--gold); }
+    .nav-right { display:flex; gap:10px; align-items:center; }
+    .nav-link { font-size:0.83rem; font-weight:500; color:rgba(255,255,255,0.55); text-decoration:none; padding:6px 14px; border-radius:7px; transition:color .2s,background .2s; }
+    .nav-link:hover { color:var(--white); background:rgba(255,255,255,0.07); }
+    .nav-cta { font-weight:700; font-size:0.83rem; background:var(--blue); color:var(--white); padding:9px 20px; border-radius:8px; border:none; cursor:pointer; text-decoration:none; transition:background .2s,transform .15s; }
+    .nav-cta:hover { background:var(--blue-lt); transform:translateY(-1px); }
+
+    .hero { min-height:100vh; background:var(--ink); display:flex; align-items:center; position:relative; overflow:hidden; padding-top:65px; }
+    .hero-bg-num { position:absolute; font-family:'DM Serif Display',serif; font-size:clamp(200px,28vw,380px); color:rgba(255,255,255,0.025); right:-2%; bottom:-4%; line-height:1; pointer-events:none; user-select:none; letter-spacing:-0.05em; }
+    .hero-line { position:absolute; left:0; right:0; height:1px; background:rgba(255,255,255,0.05); }
+    .hero-inner { position:relative; z-index:1; max-width:1160px; margin:0 auto; padding:80px 40px; display:grid; grid-template-columns:1.1fr 1fr; gap:72px; align-items:center; }
+
+    .pill { display:inline-flex; align-items:center; gap:7px; font-size:0.72rem; font-weight:600; letter-spacing:0.11em; text-transform:uppercase; color:var(--gold); background:rgba(200,151,58,0.1); border:1px solid rgba(200,151,58,0.22); padding:5px 13px; border-radius:100px; margin-bottom:26px; }
+    .pill-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); animation:blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .hero h1 { font-family:'DM Serif Display',serif; font-size:clamp(2.6rem,4.5vw,4rem); line-height:1.06; letter-spacing:-0.02em; color:var(--white); margin-bottom:22px; }
+    .hero h1 em { font-style:italic; color:var(--gold); }
+    .hero-desc { font-size:1.05rem; line-height:1.7; color:rgba(255,255,255,0.55); margin-bottom:38px; max-width:460px; }
+    .hero-actions { display:flex; gap:12px; flex-wrap:wrap; }
+
+    .btn-main { font-weight:700; font-size:0.93rem; background:var(--blue); color:var(--white); padding:13px 26px; border-radius:9px; border:none; cursor:pointer; text-decoration:none; transition:background .2s,transform .15s,box-shadow .2s; box-shadow:0 4px 20px rgba(26,63,196,.4); display:inline-flex; align-items:center; gap:7px; }
+    .btn-main:hover { background:var(--blue-lt); transform:translateY(-2px); box-shadow:0 8px 28px rgba(26,63,196,.5); }
+    .btn-ghost { font-weight:500; font-size:0.93rem; background:transparent; color:rgba(255,255,255,.7); padding:13px 26px; border-radius:9px; border:1px solid rgba(255,255,255,.18); cursor:pointer; text-decoration:none; transition:all .2s; display:inline-flex; align-items:center; gap:7px; }
+    .btn-ghost:hover { border-color:rgba(255,255,255,.45); color:var(--white); background:rgba(255,255,255,.05); }
+
+    .hero-stats { display:flex; gap:0; margin-top:52px; border-top:1px solid rgba(255,255,255,.08); padding-top:36px; }
+    .hstat { flex:1; padding-right:28px; border-right:1px solid rgba(255,255,255,.08); margin-right:28px; }
+    .hstat:last-child { border-right:none; padding-right:0; margin-right:0; }
+    .hstat-num { font-family:'DM Serif Display',serif; font-size:2.2rem; color:var(--white); line-height:1; letter-spacing:-0.02em; }
+    .hstat-num span { color:var(--gold); }
+    .hstat-lbl { font-size:0.76rem; color:rgba(255,255,255,.38); margin-top:5px; line-height:1.4; }
+
+    .hero-cards { position:relative; }
+    .hcard { background:var(--ink-mid); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:20px 22px; }
+    .hcard-main { margin-bottom:12px; }
+    .hcard-sub { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .hcard-sub-item { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:14px 16px; }
+    .chip { display:inline-flex; align-items:center; gap:4px; font-size:0.68rem; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; padding:3px 8px; border-radius:5px; margin-bottom:10px; }
+    .chip-new  { background:rgba(200,151,58,.14); color:var(--gold);   border:1px solid rgba(200,151,58,.25); }
+    .chip-ok   { background:rgba(34,197,94,.12);  color:#4ADE80;       border:1px solid rgba(34,197,94,.2); }
+    .chip-warn { background:rgba(251,191,36,.1);  color:#FCD34D;       border:1px solid rgba(251,191,36,.2); }
+    .hcard-title { font-weight:700; font-size:0.92rem; color:var(--white); margin-bottom:3px; }
+    .hcard-meta  { font-size:0.77rem; color:rgba(255,255,255,.42); }
+    .hcard-tags  { display:flex; gap:5px; flex-wrap:wrap; margin-top:9px; }
+    .htag { font-size:0.67rem; padding:2px 7px; border-radius:4px; background:rgba(255,255,255,.06); color:rgba(255,255,255,.45); }
+    .match-wrap { margin-top:10px; }
+    .match-bar  { height:3px; background:rgba(255,255,255,.08); border-radius:2px; }
+    .match-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--gold),var(--gold-lt)); width:87%; }
+    .match-txt  { font-size:0.67rem; color:rgba(255,255,255,.35); margin-top:4px; }
+    .hcard-sub-title { font-size:0.78rem; font-weight:600; color:rgba(255,255,255,.75); margin-bottom:4px; }
+    .hcard-sub-desc  { font-size:0.74rem; color:rgba(255,255,255,.38); line-height:1.45; }
+    .hcard-amount    { font-family:'DM Serif Display',serif; font-size:1.3rem; color:#FCD34D; }
+
+    section { padding:96px 0; }
+    .container { max-width:1160px; margin:0 auto; padding:0 40px; }
+    .eyebrow { font-size:0.71rem; font-weight:700; letter-spacing:0.13em; text-transform:uppercase; color:var(--blue); margin-bottom:12px; }
+    h2 { font-family:'DM Serif Display',serif; font-size:clamp(1.9rem,3vw,2.8rem); letter-spacing:-0.02em; line-height:1.1; margin-bottom:14px; }
+    .section-sub { font-size:1rem; line-height:1.7; color:var(--muted); max-width:520px; }
+
+    .prob-section { background:var(--white); }
+    .prob-grid { display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center; }
+    .big-num { font-family:'DM Serif Display',serif; font-size:6.5rem; line-height:1; letter-spacing:-0.04em; color:var(--ink); }
+    .big-num em { font-style:normal; color:var(--blue); }
+    .big-lbl { font-size:0.9rem; color:var(--muted); margin-top:8px; line-height:1.55; max-width:300px; }
+    .prob-cards { display:flex; flex-direction:column; gap:14px; }
+    .prob-card { background:var(--fog); border-radius:12px; padding:20px 22px; border-left:3px solid transparent; transition:transform .2s; }
+    .prob-card:hover { transform:translateX(5px); }
+    .prob-card.c1 { border-color:#EF4444; } .prob-card.c2 { border-color:var(--gold); } .prob-card.c3 { border-color:var(--blue); }
+    .prob-card h4 { font-weight:700; font-size:0.9rem; color:var(--ink); margin-bottom:5px; }
+    .prob-card p  { font-size:0.83rem; color:var(--muted); line-height:1.55; }
+
+    .how-section { background:var(--fog); }
+    .how-header { text-align:center; margin-bottom:60px; }
+    .how-header .section-sub { margin:0 auto; }
+    .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; position:relative; }
+    .steps::before { content:''; position:absolute; top:28px; left:10%; right:10%; height:1px; background:linear-gradient(90deg,transparent,var(--border),var(--border),transparent); }
+    .step { text-align:center; padding:0 12px; }
+    .step-num { width:56px; height:56px; border-radius:50%; background:var(--white); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; margin:0 auto 18px; font-family:'DM Serif Display',serif; font-size:1.3rem; color:var(--blue); position:relative; z-index:1; }
+    .step h4 { font-weight:700; font-size:0.9rem; color:var(--ink); margin-bottom:7px; }
+    .step p   { font-size:0.8rem; color:var(--muted); line-height:1.55; }
+
+    .offres-section { background:var(--white); }
+    .offres-top { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:32px; flex-wrap:wrap; gap:16px; }
+    .offres-count { font-size:0.8rem; color:var(--muted); margin-top:6px; }
+    .offres-count strong { color:var(--blue); }
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
+    .fbtn { font-size:0.78rem; font-weight:600; padding:7px 16px; border-radius:100px; border:1.5px solid var(--border); background:transparent; cursor:pointer; color:var(--muted); transition:all .18s; font-family:'DM Sans',sans-serif; }
+    .fbtn.on { background:var(--ink); border-color:var(--ink); color:var(--white); }
+    .fbtn:hover:not(.on) { border-color:var(--ink); color:var(--ink); }
+    .offres-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+    .ocard { background:var(--fog); border-radius:14px; padding:24px 26px; border:1.5px solid transparent; cursor:pointer; transition:all .22s; position:relative; overflow:hidden; }
+    .ocard:hover { border-color:var(--blue); background:white; transform:translateY(-3px); box-shadow:0 16px 40px rgba(6,16,30,.09); }
+    .ocard.is-new { border-color:rgba(34,197,94,.25); }
+    .ocard-new-bar { position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,#22C55E,#16A34A); }
+    .ocard-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+    .otype { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; padding:3px 9px; border-radius:5px; }
+    .otype-c { background:rgba(26,63,196,.09); color:var(--blue); }
+    .otype-e { background:rgba(124,58,237,.09); color:#7C3AED; }
+    .otype-n { background:rgba(34,197,94,.1); color:#16A34A; }
+    .ourgent { font-size:0.7rem; font-weight:700; color:#DC2626; }
+    .otitle { font-family:'DM Serif Display',serif; font-size:1.05rem; color:var(--ink); margin-bottom:4px; }
+    .oloc { font-size:0.8rem; color:var(--muted); }
+    .otags { display:flex; gap:6px; flex-wrap:wrap; margin:12px 0; }
+    .otag { font-size:0.72rem; padding:3px 9px; border-radius:5px; background:rgba(6,16,30,.05); color:var(--muted); }
+    .ofoot { display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+    .odate { font-size:0.72rem; color:#9CA3AF; }
+    .octa { font-weight:700; font-size:0.75rem; color:var(--ink); background:transparent; border:1.5px solid rgba(6,16,30,.2); padding:6px 14px; border-radius:7px; cursor:pointer; transition:all .18s; font-family:'DM Sans',sans-serif; }
+    .octa:hover { background:var(--ink); color:var(--white); border-color:var(--ink); }
+    .olegal { margin-top:10px; padding:8px 12px; border-radius:7px; background:rgba(251,191,36,.08); border:1px solid rgba(251,191,36,.2); font-size:0.74rem; color:#92400E; line-height:1.4; }
+    .olegal strong { color:#B45309; }
+    .see-more { text-align:center; margin-top:36px; }
+
+    .diff-section { background:var(--ink); }
+    .diff-section h2 { color:var(--white); }
+    .diff-section .section-sub { color:rgba(255,255,255,.45); }
+    .diff-section .eyebrow { color:var(--gold); }
+    .diff-header { margin-bottom:52px; }
+    .diff-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+    .dcard { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:28px 26px; transition:background .2s; }
+    .dcard:hover { background:rgba(255,255,255,.07); }
+    .dcard-icon { font-size:1.6rem; margin-bottom:16px; }
+    .dcard h3 { font-weight:700; font-size:0.95rem; color:var(--white); margin-bottom:8px; }
+    .dcard p  { font-size:0.82rem; color:rgba(255,255,255,.48); line-height:1.6; }
+    .dcard-accent { font-family:'DM Serif Display',serif; font-size:1.5rem; color:var(--gold); margin-bottom:6px; }
+    .comp-table { margin-top:48px; }
+    .comp-row { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:8px; padding:12px 16px; border-radius:8px; font-size:0.82rem; align-items:center; }
+    .comp-row.head { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,.3); padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,.07); }
+    .comp-row.body { color:rgba(255,255,255,.45); border-bottom:1px solid rgba(255,255,255,.04); }
+    .comp-row.ours { background:rgba(26,63,196,.15); color:rgba(255,255,255,.85); font-weight:600; border:1px solid rgba(26,63,196,.3); }
+    .check-y { color:#4ADE80; } .check-n { color:rgba(255,255,255,.2); }
+
+    .cta-section { background:var(--fog); }
+    .cta-inner { background:var(--ink); border-radius:22px; padding:72px 64px; text-align:center; position:relative; overflow:hidden; }
+    .cta-glow { position:absolute; inset:0; background:radial-gradient(ellipse at 50% -10%,rgba(26,63,196,.22) 0%,transparent 60%); }
+    .cta-inner h2 { color:var(--white); margin:0 auto 14px; max-width:560px; position:relative; }
+    .cta-inner .section-sub { color:rgba(255,255,255,.45); margin:0 auto 36px; position:relative; }
+    .cta-btns { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; position:relative; }
+
+    footer { background:var(--ink); border-top:1px solid rgba(255,255,255,.06); padding:40px 0; }
+    .footer-inner { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; }
+    .footer-logo { font-family:'DM Serif Display',serif; font-size:1.05rem; color:var(--white); }
+    .footer-logo em { font-style:normal; color:var(--gold); }
+    .footer-links { display:flex; gap:24px; }
+    .footer-links a { font-size:0.8rem; color:rgba(255,255,255,.35); text-decoration:none; transition:color .2s; }
+    .footer-links a:hover { color:rgba(255,255,255,.7); }
+    .footer-copy { font-size:0.75rem; color:rgba(255,255,255,.2); }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+    .fu { animation:fadeUp .65s ease forwards; opacity:0; }
+    .d1{animation-delay:.05s} .d2{animation-delay:.15s} .d3{animation-delay:.28s} .d4{animation-delay:.42s} .d5{animation-delay:.56s}
+
+    @media(max-width:900px){
+      nav{padding:0 20px} .nav-link{display:none}
+      .hero-inner{grid-template-columns:1fr;gap:40px;padding:48px 20px} .hero-cards{display:none}
+      .container{padding:0 20px} .prob-grid{grid-template-columns:1fr;gap:40px}
+      .steps{grid-template-columns:1fr 1fr;gap:24px} .steps::before{display:none}
+      .offres-grid{grid-template-columns:1fr} .diff-grid{grid-template-columns:1fr}
+      .comp-row{grid-template-columns:2fr 1fr 1fr}
+      .comp-row>*:nth-child(4),.comp-row>*:nth-child(5){display:none}
+      .cta-inner{padding:48px 24px} .footer-inner{flex-direction:column;text-align:center}
+      .footer-links{justify-content:center}
+    }
+  </style>
+</head>
+<body>
+<div class="tricolor"></div>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const APP_URL = "app.html";
+
+const OFFRES = [
+  { id:1, type:"commune", typeLabel:"Commune", titre:"Gardien-Brigadier de Police Municipale", commune:"Perpignan", dept:"Pyrénées-Orientales (66)", grade:"Gardien-Brigadier", armement:"Armé", effectif:"58 agents", contrat:"Titulaire ou lauréat", date:"Il y a 3 jours", urgent:false, isNew:false, engagement:false },
+  { id:2, type:"epci", typeLabel:"EPCI", titre:"Agent PM — Mobilité prioritaire (rapprochement familial)", commune:"CA Pays Voironnais", dept:"Isère (38)", grade:"Brigadier-Chef", armement:"Armé", effectif:"12 agents", contrat:"Mutation externe", date:"Hier", urgent:false, isNew:true, engagement:false },
+  { id:3, type:"commune", typeLabel:"Commune", titre:"Policier Municipal — Création nouveau service", commune:"Châteauroux", dept:"Indre (36)", grade:"Tous grades", armement:"Armé", effectif:"3 postes", contrat:"Mutation ou lauréat", date:"Il y a 5 jours", urgent:true, isNew:false, engagement:false },
+  { id:4, type:"commune", typeLabel:"Commune", titre:"Brigadier-Chef — Partenariat PN renforcé", commune:"Meaux", dept:"Seine-et-Marne (77)", grade:"Gardien Principal / Brigadier", armement:"Armé", effectif:"4 postes", contrat:"Mutation externe", date:"Il y a 8 jours", urgent:false, isNew:false, engagement:true },
+  { id:5, type:"epci", typeLabel:"EPCI", titre:"Spécialiste Plage/Nautique — Saison estivale", commune:"Agglo. Bassin d'Arcachon", dept:"Gironde (33)", grade:"Brigadier-Chef", armement:"Armé", effectif:"2 postes", contrat:"Mutation externe", date:"Il y a 10 jours", urgent:false, isNew:false, engagement:false },
+  { id:6, type:"commune", typeLabel:"Commune", titre:"Chef de Service PM — Direction 18 agents", commune:"Sète", dept:"Hérault (34)", grade:"Chef de Service", armement:"Armé", effectif:"18 agents", contrat:"Mutation externe", date:"Il y a 11 jours", urgent:false, isNew:false, engagement:false },
+];
+
+function Nav() {
+  return (
+    <nav>
+      <a href="#" className="logo">
+        <div className="logo-icon">🛡️</div>
+        PM•<em>EMPLOI</em>
+      </a>
+      <div className="nav-right">
+        <a href="#offres"   className="nav-link">Offres</a>
+        <a href="#comment"  className="nav-link">Fonctionnement</a>
+        <a href="#pourquoi" className="nav-link">Pourquoi nous</a>
+        <a href={APP_URL}   className="nav-cta">Accéder à la plateforme →</a>
+      </div>
+    </nav>
+  );
+}
+
+function Hero() {
+  return (
+    <section className="hero">
+      <div className="hero-bg-num">29k</div>
+      <div className="hero-line" style={{top:"30%"}} />
+      <div className="hero-inner">
+        <div>
+          <div className="pill fu d1"><span className="pill-dot" />Bourse nationale · Police Municipale</div>
+          <h1 className="fu d2">La mobilité de la<br/>Police Municipale,<br/><em>enfin centralisée</em></h1>
+          <p className="hero-desc fu d3">4 640 communes publient leurs offres sur 100+ sites différents. PM•EMPLOI les agrège toutes — avec la réglementation intégrée.</p>
+          <div className="hero-actions fu d4">
+            <a href="#offres" className="btn-main">Consulter les offres →</a>
+            <a href={APP_URL} className="btn-ghost">Espace mairie / CDG</a>
+          </div>
+          <div className="hero-stats fu d5">
+            <div className="hstat"><div className="hstat-num">29<span>k</span></div><div className="hstat-lbl">Agents en poste<br/>en France</div></div>
+            <div className="hstat"><div className="hstat-num">4<span>k+</span></div><div className="hstat-lbl">Postes vacants<br/>estimés</div></div>
+            <div className="hstat"><div className="hstat-num">11<span>k</span></div><div className="hstat-lbl">Recrutements<br/>prévus d'ici 2026</div></div>
+          </div>
+        </div>
+        <div className="hero-cards fu d3">
+          <div className="hcard hcard-main">
+            <div className="chip chip-new">✦ Nouveau poste</div>
+            <div className="hcard-title">Agent PM — Mobilité prioritaire</div>
+            <div className="hcard-meta">CA Pays Voironnais · Isère (38)</div>
+            <div className="hcard-tags">
+              <span className="htag">EPCI</span><span className="htag">Armé</span>
+              <span className="htag">Mutation externe</span><span className="htag">Priorité légale ⭐</span>
+            </div>
+            <div className="match-wrap">
+              <div className="match-bar"><div className="match-fill" /></div>
+              <div className="match-txt">Compatibilité profil · 87%</div>
+            </div>
+          </div>
+          <div className="hcard-sub">
+            <div className="hcard-sub-item">
+              <div className="chip chip-warn">⏳ Engagement</div>
+              <div className="hcard-amount">10 877 €</div>
+              <div className="hcard-sub-desc">Remboursement si mutation &lt; 3 ans · Calculé automatiquement</div>
+            </div>
+            <div className="hcard-sub-item">
+              <div className="chip chip-ok">✓ Agrément</div>
+              <div className="hcard-sub-title">Serment conservé</div>
+              <div className="hcard-sub-desc">Procureur avisé si nouveau ressort judiciaire</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Probleme() {
+  return (
+    <section className="prob-section">
+      <div className="container">
+        <div className="prob-grid">
+          <div>
+            <div className="eyebrow">Le problème du marché</div>
+            <h2>Un marché fragmenté,<br/>sans bourse nationale</h2>
+            <p className="section-sub" style={{marginBottom:36}}>Contrairement à la Police Nationale, la police municipale ne dispose d'aucun système centralisé. Chaque commune gère ses offres de façon autonome.</p>
+            <div className="big-num">6<em>+</em></div>
+            <div className="big-lbl">mois nécessaires en moyenne pour pourvoir un poste vacant en zone tendue (auditions Sénat, 2024)</div>
+          </div>
+          <div className="prob-cards">
+            <div className="prob-card c1">
+              <h4>🗂 100+ canaux de publication dispersés</h4>
+              <p>CDG départementaux, Gazette des communes, sites communaux… Aucun point d'entrée unique pour les agents en mobilité ou les lauréats de concours.</p>
+            </div>
+            <div className="prob-card c2">
+              <h4>⏳ Réglementation ignorée par les plateformes</h4>
+              <p>L'engagement de servir (3 ans, 10 877 €), les priorités légales de mutation, la distinction employeur/lieu d'exercice — aucune plateforme généraliste ne les gère.</p>
+            </div>
+            <div className="prob-card c3">
+              <h4>🏛 Employeur ≠ lieu d'exercice</h4>
+              <p>Un agent EPCI obéit au président d'EPCI pour sa carrière mais au maire de la commune d'affectation sur le terrain. L'interlocuteur pour muter change selon la structure.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Comment() {
+  const steps = [
+    { n:"1", title:"Créez votre profil", desc:"Grade, ancienneté, date de titularisation, engagement de servir, priorités légales. Identité anonymisée côté mairie." },
+    { n:"2", title:"Consultez les offres", desc:"Toutes les offres PM en France, filtrées par région, grade et type d'employeur. Mises à jour quotidiennes." },
+    { n:"3", title:"Vérifiez votre éligibilité", desc:"PM•EMPLOI calcule automatiquement votre engagement de servir restant et le coût estimé pour la collectivité d'accueil." },
+    { n:"4", title:"Entrez en contact", desc:"Candidature directe. L'app identifie le bon interlocuteur : maire, président d'EPCI ou bureau syndical." },
+  ];
+  return (
+    <section className="how-section" id="comment">
+      <div className="container">
+        <div className="how-header">
+          <div className="eyebrow">Fonctionnement</div>
+          <h2>Simple pour l'agent,<br/>rigoureux sur la réglementation</h2>
+          <p className="section-sub">PM•EMPLOI gère les contraintes juridiques en arrière-plan. Vous, vous cherchez votre prochain poste.</p>
+        </div>
+        <div className="steps">
+          {steps.map(s => (
+            <div className="step" key={s.n}>
+              <div className="step-num">{s.n}</div>
+              <h4>{s.title}</h4>
+              <p>{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Offres() {
+  const [filter, setFilter] = useState("tous");
+  const filters = [
+    {id:"tous",label:"Tous les postes"},{id:"commune",label:"Communes"},
+    {id:"epci",label:"EPCI"},{id:"urgent",label:"⚡ Urgent"},{id:"nouveau",label:"🆕 Récents"},
+  ];
+  const filtered = OFFRES.filter(o => {
+    if (filter==="tous")    return true;
+    if (filter==="urgent")  return o.urgent;
+    if (filter==="nouveau") return o.isNew;
+    return o.type === filter;
+  });
+  return (
+    <section className="offres-section" id="offres">
+      <div className="container">
+        <div className="offres-top">
+          <div>
+            <div className="eyebrow">Offres d'emploi</div>
+            <h2>Postes disponibles</h2>
+            <div className="offres-count"><strong>{filtered.length}</strong> offre{filtered.length>1?"s":""} affichée{filtered.length>1?"s":""} · Accédez à la plateforme pour l'intégralité</div>
+          </div>
+          <a href={APP_URL} className="btn-main" style={{alignSelf:"flex-end"}}>Voir toutes les offres →</a>
+        </div>
+        <div className="filter-bar">
+          {filters.map(f => <button key={f.id} className={`fbtn ${filter===f.id?"on":""}`} onClick={()=>setFilter(f.id)}>{f.label}</button>)}
+        </div>
+        <div className="offres-grid">
+          {filtered.map(o => (
+            <div key={o.id} className={`ocard ${o.isNew?"is-new":""}`}>
+              {o.isNew && <div className="ocard-new-bar" />}
+              <div className="ocard-top">
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  <span className={`otype ${o.type==="commune"?"otype-c":"otype-e"}`}>{o.typeLabel}</span>
+                  {o.isNew && <span className="otype otype-n">Nouveau</span>}
+                </div>
+                {o.urgent && <span className="ourgent">⚡ Urgent</span>}
+              </div>
+              <div className="otitle">{o.titre}</div>
+              <div className="oloc">📍 {o.commune} · {o.dept}</div>
+              <div className="otags">
+                <span className="otag">🎖 {o.grade}</span>
+                <span className="otag">{o.armement==="Armé"?"🔫":"🦺"} {o.armement}</span>
+                <span className="otag">👥 {o.effectif}</span>
+                <span className="otag">📄 {o.contrat}</span>
+              </div>
+              {o.engagement && (
+                <div className="olegal">⚠️ <strong>Engagement de servir possible</strong> — vérifiez votre date de titularisation. Remboursement jusqu'à 10 877 € applicable.</div>
+              )}
+              <div className="ofoot">
+                <span className="odate">{o.date}</span>
+                <button className="octa" onClick={()=>window.location.href=APP_URL}>Candidater →</button>
+              </div>
+            </div>
+          ))}
+        </div>
+        {filtered.length===0 && <div style={{textAlign:"center",padding:"48px",color:"var(--muted)"}}>Aucune offre pour ce filtre actuellement.</div>}
+        <div className="see-more"><a href={APP_URL} className="btn-main">Accéder à toutes les offres sur la plateforme →</a></div>
+      </div>
+    </section>
+  );
+}
+
+function Pourquoi() {
+  const cards = [
+    {icon:"⚖️",accent:"10 877 €",title:"Engagement de servir calculé",desc:"Montant exact et dégressif du remboursement selon votre date de titularisation. Affiché automatiquement sur chaque profil agent."},
+    {icon:"⭐",accent:"3 priorités",title:"Priorités légales valorisées",desc:"Rapprochement de conjoint, RQTH, proche aidant : ces demandes sont identifiées et transmises en priorité à la collectivité."},
+    {icon:"🏛",accent:"3 employeurs",title:"Distinction employeur / terrain",desc:"Commune, EPCI ou syndicat : PM•EMPLOI identifie le bon interlocuteur (maire, président EPCI, bureau syndical) pour chaque mutation."},
+    {icon:"🔒",accent:"Anonymat",title:"Identité protégée par défaut",desc:"Noms masqués, coordonnées chiffrées. Déverrouillage uniquement par mairies officiellement vérifiées avec abonnement actif."},
+    {icon:"📍",accent:"100% PM",title:"Spécialisé police municipale",desc:"Agrégation des offres CDG, Gazette des communes, sites communaux. Pas de pollution avec les autres métiers de la FPT."},
+    {icon:"🔔",accent:"Temps réel",title:"Alertes sur mesure",desc:"Recevez uniquement les offres correspondant à votre grade, vos régions cibles et votre type d'employeur préféré."},
+  ];
+  return (
+    <section className="diff-section" id="pourquoi">
+      <div className="container">
+        <div className="diff-header">
+          <div className="eyebrow">Pourquoi PM•EMPLOI</div>
+          <h2>Conçu pour la réglementation<br/>de la police municipale</h2>
+          <p className="section-sub">Aucune plateforme généraliste ne gère l'engagement de servir, les priorités légales ou la distinction employeur/lieu d'exercice.</p>
+        </div>
+        <div className="diff-grid">
+          {cards.map((c,i) => (
+            <div className="dcard" key={i}>
+              <div className="dcard-icon">{c.icon}</div>
+              <div className="dcard-accent">{c.accent}</div>
+              <h3>{c.title}</h3>
+              <p>{c.desc}</p>
+            </div>
+          ))}
+        </div>
+        <div className="comp-table">
+          <div className="comp-row head"><span>Plateforme</span><span>Tarif mairie</span><span>Spécialisé PM</span><span>Alertes légales</span><span>Anonymat agent</span></div>
+          {[["emploi-territorial.fr","Gratuit",false,false,false],["Gazette des Communes","Élevé",false,false,false],["CDG départementaux","Gratuit",true,false,false]].map(([n,p,s,a,an])=>(
+            <div className="comp-row body" key={n}>
+              <span>{n}</span><span>{p}</span>
+              <span className={s?"check-y":"check-n"}>{s?"✓":"✗"}</span>
+              <span className={a?"check-y":"check-n"}>{a?"✓":"✗"}</span>
+              <span className={an?"check-y":"check-n"}>{an?"✓":"✗"}</span>
+            </div>
+          ))}
+          <div className="comp-row ours">
+            <span>🛡️ PM•EMPLOI</span><span>Dès 29 €/mois</span>
+            <span className="check-y">✓</span><span className="check-y">✓</span><span className="check-y">✓</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CTA() {
+  return (
+    <section className="cta-section">
+      <div className="container">
+        <div className="cta-inner">
+          <div className="cta-glow" />
+          <div className="eyebrow" style={{color:"var(--gold)",position:"relative"}}>Rejoindre la plateforme</div>
+          <h2>La première bourse nationale<br/>dédiée aux policiers municipaux</h2>
+          <p className="section-sub">Agents : créez votre profil et recevez les offres qui correspondent à votre situation réglementaire. Collectivités : publiez vos postes et accédez à un vivier qualifié.</p>
+          <div className="cta-btns">
+            <a href={APP_URL} className="btn-main">Je suis un agent →</a>
+            <a href={APP_URL} className="btn-ghost">Je représente une mairie / CDG</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer>
+      <div className="container">
+        <div className="footer-inner">
+          <div>
+            <div className="footer-logo">PM•<em>EMPLOI</em></div>
+            <div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.2)",marginTop:4}}>La bourse nationale des policiers municipaux · Version bêta · © 2026 CAPDIM</div>
+          </div>
+          <div className="footer-links">
+            <a href="#">À propos</a><a href="#offres">Offres</a>
+            <a href="#pourquoi">Fonctionnalités</a><a href={APP_URL}>Plateforme</a>
+            <a href="#">Mentions légales</a>
+          </div>
+          <div className="footer-copy">Conforme RGPD</div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function App() {
+  return (<><Nav/><Hero/><Probleme/><Comment/><Offres/><Pourquoi/><CTA/><Footer/></>);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
