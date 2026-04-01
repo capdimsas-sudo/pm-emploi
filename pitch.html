@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PM•EMPLOI — Présentation Investisseur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#06101E;--ink2:#0D1F38;--ink3:#162B4A;
+  --blue:#1A3FC4;--blue2:#2D55E0;
+  --gold:#C8973A;--gold2:#E5B04A;
+  --white:#FFFFFF;--fog:#F0EDE8;
+  --muted:#6B7A8D;--border:rgba(255,255,255,0.08);
+  --red:#ED2939;--bleu:#002395;
+  --green:#4ADE80;--cyan:#93C5FD;--amber:#FCD34D;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--ink)}
+body{font-family:'DM Sans',sans-serif;color:var(--white)}
+
+/* ── SLIDE WRAPPER ── */
+#root{width:100vw;height:100vh;display:flex;flex-direction:column}
+.deck{width:100%;height:100%;position:relative;overflow:hidden}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  padding:0;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.45s ease, transform 0.45s ease;
+  transform:translateX(40px);
+}
+.slide.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.slide.prev{opacity:0;transform:translateX(-40px)}
+
+/* ── NAV BAR ── */
+.nav-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;
+  background:rgba(6,16,30,0.95);
+  backdrop-filter:blur(12px);
+  border-top:1px solid var(--border);
+}
+.nav-dots{display:flex;gap:8px;align-items:center}
+.dot{
+  width:6px;height:6px;border-radius:50%;
+  background:rgba(255,255,255,0.2);
+  transition:all 0.3s;cursor:pointer;border:none;
+}
+.dot.on{background:var(--gold);width:22px;border-radius:3px}
+.nav-btns{display:flex;gap:10px;align-items:center}
+.nav-btn{
+  background:transparent;border:1px solid rgba(255,255,255,0.18);
+  color:rgba(255,255,255,0.7);padding:7px 18px;border-radius:7px;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all 0.2s;
+}
+.nav-btn:hover{border-color:rgba(255,255,255,0.5);color:var(--white);background:rgba(255,255,255,0.06)}
+.nav-btn.primary{background:var(--blue);border-color:var(--blue);color:var(--white)}
+.nav-btn.primary:hover{background:var(--blue2)}
+.slide-counter{font-size:12px;color:rgba(255,255,255,0.35);font-weight:500;min-width:60px;text-align:right}
+
+/* ── TRICOLORE ── */
+.tricolor{height:3px;background:linear-gradient(90deg,#002395 33.33%,#fff 33.33%,#fff 66.66%,#ED2939 66.66%);flex-shrink:0}
+
+/* ── HEADER MINI ── */
+.slide-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 40px;border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.logo-sm{display:flex;align-items:center;gap:9px;font-family:'DM Serif Display',serif;font-size:1rem;color:var(--white)}
+.logo-icon{width:26px;height:26px;background:var(--blue);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif}
+.logo-sm em{font-style:normal;color:var(--gold)}
+.slide-tag{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35)}
+
+/* ── SLIDE BODY ── */
+.slide-body{flex:1;overflow:hidden;padding:36px 40px 60px;display:flex;flex-direction:column}
+
+/* ── TYPOGRAPHY ── */
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.slide-title{font-family:'DM Serif Display',serif;font-size:clamp(2rem,3.5vw,3.2rem);line-height:1.07;letter-spacing:-0.02em;margin-bottom:16px}
+.slide-title em{font-style:italic;color:var(--gold)}
+.slide-sub{font-size:1rem;line-height:1.7;color:rgba(255,255,255,0.5);max-width:560px}
+
+/* ── STAT CARDS ── */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
+.stat-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
+.stat-num{font-family:'DM Serif Display',serif;font-size:2.6rem;line-height:1;letter-spacing:-0.03em;color:var(--white)}
+.stat-num em{font-style:normal;color:var(--gold)}
+.stat-lbl{font-size:13px;color:rgba(255,255,255,0.45);margin-top:7px;line-height:1.4}
+
+/* ── PROBLEM CARDS ── */
+.prob-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px;flex:1}
+.prob-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:22px;border-left:3px solid transparent;transition:transform 0.2s}
+.prob-card:hover{transform:translateX(4px)}
+.prob-card.c1{border-color:#EF4444}.prob-card.c2{border-color:var(--gold)}.prob-card.c3{border-color:var(--blue)}.prob-card.c4{border-color:var(--green)}
+.prob-card h4{font-weight:600;font-size:14px;color:var(--white);margin-bottom:8px}
+.prob-card p{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.6}
+
+/* ── FEAT GRID ── */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;flex:1}
+.feat-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:22px}
+.feat-card.featured{background:rgba(26,63,196,0.12);border-color:rgba(26,63,196,0.3)}
+.feat-icon{font-size:22px;margin-bottom:12px}
+.feat-card h3{font-weight:600;font-size:14px;color:var(--white);margin-bottom:8px}
+.feat-card p{font-size:12.5px;color:rgba(255,255,255,0.45);line-height:1.6}
+.feat-tag{display:inline-block;margin-top:12px;font-size:11px;font-weight:600;color:var(--gold);letter-spacing:0.05em}
+
+/* ── ROI SECTION ── */
+.roi-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;margin-top:24px}
+.roi-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:24px}
+.roi-big{font-family:'DM Serif Display',serif;font-size:2.4rem;letter-spacing:-0.03em;line-height:1;margin-bottom:6px}
+.roi-lbl{font-size:12px;color:rgba(255,255,255,0.4);line-height:1.5}
+.roi-highlight{background:rgba(200,151,58,0.1);border:1px solid rgba(200,151,58,0.2);border-radius:8px;padding:12px 16px;margin-top:14px}
+.roi-highlight p{font-size:12px;color:rgba(255,255,255,0.55);line-height:1.6}
+.roi-highlight strong{color:var(--gold)}
+
+/* ── SLIDER ── */
+.slider-wrap{margin:10px 0;display:flex;align-items:center;gap:12px}
+.slider-wrap label{font-size:12px;color:rgba(255,255,255,0.4);min-width:160px}
+.slider-wrap input[type=range]{flex:1;accent-color:var(--gold)}
+.slider-val{font-size:13px;font-weight:600;color:var(--gold);min-width:60px;text-align:right}
+.sim-result{background:rgba(200,151,58,0.08);border:1px solid rgba(200,151,58,0.18);border-radius:10px;padding:16px 20px;margin-top:16px;display:flex;gap:24px;align-items:center}
+.sim-mrr{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--green);letter-spacing:-0.02em}
+.sim-detail{font-size:12px;color:rgba(255,255,255,0.4);line-height:1.7}
+
+/* ── PROJECTIONS ── */
+.proj-header{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,0.5)}
+.legend-sq{width:10px;height:10px;border-radius:2px}
+
+/* ── COMP TABLE ── */
+.comp-table{margin-top:20px;border-radius:12px;overflow:hidden;border:1px solid var(--border);flex:1}
+.comp-row{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr;gap:0;padding:11px 18px;font-size:13px;align-items:center}
+.comp-row.head{background:rgba(255,255,255,0.04);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.3);border-bottom:1px solid var(--border)}
+.comp-row.body{border-bottom:1px solid rgba(255,255,255,0.04);color:rgba(255,255,255,0.4)}
+.comp-row.ours{background:rgba(26,63,196,0.15);color:rgba(255,255,255,0.9);font-weight:600;border:none}
+.cy{color:var(--green)}.cn{color:rgba(255,255,255,0.2)}
+
+/* ── TARIFS ── */
+.plans-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:24px;flex:1}
+.plan-card{border-radius:14px;padding:20px;display:flex;flex-direction:column;transition:transform 0.2s}
+.plan-card:hover{transform:translateY(-4px)}
+.plan-price{font-family:'DM Serif Display',serif;font-size:2rem;line-height:1;letter-spacing:-0.02em;margin-bottom:4px}
+.plan-name{font-weight:600;font-size:13px;margin-bottom:8px}
+.plan-cible{font-size:11px;opacity:0.7;margin-bottom:12px;flex:1}
+.plan-badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 9px;border-radius:5px;margin-top:auto}
+
+/* ── SORTIE ── */
+.exit-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:22px}
+.exit-card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:20px;border-top:3px solid}
+.exit-nom{font-weight:600;font-size:14px;color:var(--white);margin-bottom:4px}
+.exit-profil{font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:10px}
+.exit-desc{font-size:12px;color:rgba(255,255,255,0.45);line-height:1.6;margin-bottom:12px}
+.exit-footer{display:flex;justify-content:space-between;align-items:center}
+.exit-timing{font-size:11px;color:rgba(255,255,255,0.3)}
+.proba{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px}
+
+/* ── CTA SLIDE ── */
+.cta-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px;position:relative}
+.cta-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(26,63,196,0.18) 0%,transparent 60%);pointer-events:none}
+.cta-title{font-family:'DM Serif Display',serif;font-size:clamp(2.4rem,4vw,3.8rem);line-height:1.06;letter-spacing:-0.03em}
+.cta-title em{font-style:italic;color:var(--gold)}
+.cta-sub{font-size:1.05rem;color:rgba(255,255,255,0.45);max-width:500px;line-height:1.7}
+.cta-contact{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.cta-btn{font-weight:700;font-size:0.9rem;padding:13px 28px;border-radius:10px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s}
+.cta-btn.main{background:var(--blue);color:var(--white);box-shadow:0 4px 20px rgba(26,63,196,0.4)}
+.cta-btn.main:hover{background:var(--blue2);transform:translateY(-2px)}
+.cta-btn.ghost{background:transparent;color:var(--white);border:1px solid rgba(255,255,255,0.2)}
+.cta-btn.ghost:hover{border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.05)}
+
+/* ── ANIMATIONS ── */
+@keyframes fu{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fu 0.55s ease forwards;opacity:0}
+.d1{animation-delay:0.05s}.d2{animation-delay:0.15s}.d3{animation-delay:0.25s}
+.d4{animation-delay:0.35s}.d5{animation-delay:0.45s}.d6{animation-delay:0.55s}
+
+/* keyboard hint */
+.kb-hint{font-size:11px;color:rgba(255,255,255,0.2);display:flex;align-items:center;gap:6px}
+.kb{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:2px 6px;font-size:10px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const SLIDES = [
+  "Couverture",
+  "Le problème",
+  "La solution",
+  "Différenciateurs",
+  "ROI collectivité",
+  "Projections MRR",
+  "Tarifs",
+  "Scénarios de sortie",
+  "Conclusion",
+];
+
+function Header({ tag }) {
+  return (
+    <div className="slide-header">
+      <div className="logo-sm">
+        <div className="logo-icon">PM</div>
+        PM•<em>EMPLOI</em>
+      </div>
+      <span className="slide-tag">{tag}</span>
+    </div>
+  );
+}
+
+/* ── SLIDE 0 : COUVERTURE ── */
+function SlideCouverture() {
+  return (
+    <div className="slide-body" style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center",gap:0,paddingBottom:80}}>
+      <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 50% 20%,rgba(26,63,196,0.2) 0%,transparent 60%)",pointerEvents:"none"}} />
+      <div style={{position:"absolute",fontFamily:"'DM Serif Display',serif",fontSize:"clamp(180px,22vw,280px)",color:"rgba(255,255,255,0.025)",bottom:"-4%",right:"-2%",lineHeight:1,letterSpacing:"-0.05em",pointerEvents:"none",userSelect:"none"}}>29k</div>
+
+      <div className="fu d1" style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:11,fontWeight:600,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--gold)",background:"rgba(200,151,58,0.1)",border:"1px solid rgba(200,151,58,0.2)",padding:"5px 14px",borderRadius:100,marginBottom:28}}>
+        <span style={{width:5,height:5,borderRadius:"50%",background:"var(--gold)",display:"inline-block"}} />
+        Présentation investisseur · 2026
+      </div>
+
+      <h1 className="fu d2" style={{fontFamily:"'DM Serif Display',serif",fontSize:"clamp(3rem,5.5vw,5rem)",lineHeight:1.05,letterSpacing:"-0.03em",marginBottom:24,position:"relative"}}>
+        La mobilité de la<br/><em style={{fontStyle:"italic",color:"var(--gold)"}}>Police Municipale</em><br/>enfin centralisée
+      </h1>
+
+      <p className="fu d3" style={{fontSize:"1.05rem",color:"rgba(255,255,255,0.45)",maxWidth:500,lineHeight:1.7,marginBottom:40}}>
+        PM•EMPLOI — première bourse nationale dédiée aux policiers municipaux.
+        Agrégation des offres, réglementation intégrée, ROI immédiat.
+      </p>
+
+      <div className="fu d4" style={{display:"flex",gap:16,flexWrap:"wrap",justifyContent:"center"}}>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:"14px 22px",textAlign:"center"}}>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"2rem",color:"var(--white)",letterSpacing:"-0.02em"}}>29<span style={{color:"var(--gold)"}}>k</span></div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:4}}>agents en poste</div>
+        </div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:"14px 22px",textAlign:"center"}}>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"2rem",color:"var(--white)",letterSpacing:"-0.02em"}}>4<span style={{color:"var(--gold)"}}>k+</span></div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:4}}>postes vacants</div>
+        </div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:"14px 22px",textAlign:"center"}}>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"2rem",color:"var(--white)",letterSpacing:"-0.02em"}}>11<span style={{color:"var(--gold)"}}>k</span></div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:4}}>recrutements 2026</div>
+        </div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:"14px 22px",textAlign:"center"}}>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"2rem",color:"var(--white)",letterSpacing:"-0.02em"}}>100<span style={{color:"var(--gold)"}}>+</span></div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:4}}>canaux dispersés</div>
+        </div>
+      </div>
+
+      <div className="fu d5" style={{marginTop:36,fontSize:12,color:"rgba(255,255,255,0.2)"}}>
+        CAPDIM · contact@capdim.fr · capdimsas-sudo.github.io/pm-emploi
+      </div>
+    </div>
+  );
+}
+
+/* ── SLIDE 1 : PROBLÈME ── */
+function SlideProbleme() {
+  return (
+    <div className="slide-body">
+      <div className="eyebrow fu d1">Le problème du marché</div>
+      <h2 className="slide-title fu d2">Un marché <em>fragmenté</em>,<br/>aucune bourse nationale</h2>
+      <p className="slide-sub fu d3">Contrairement à la Police Nationale, la police municipale ne dispose d'aucun système centralisé. Chaque commune publie ses vacances de façon autonome.</p>
+      <div className="prob-grid" style={{marginTop:22}}>
+        {[
+          {c:"c1",icon:"🗂",t:"100+ canaux dispersés",d:"CDG départementaux, Gazette des communes, sites communaux… Aucun point d'entrée unique. Les agents ne trouvent pas les offres qui leur correspondent."},
+          {c:"c2",icon:"⏳",t:"6 mois de vacance en zone tendue",d:"Délai moyen documenté par les auditions du Sénat (2024). Coût estimé : 22 500 € de masse salariale non travaillée par poste vacant."},
+          {c:"c3",icon:"⚖️",t:"Réglementation ignorée partout",d:"Engagement de servir (10 877 €), priorités légales de mutation, distinction employeur/lieu d'exercice — aucune plateforme généraliste ne gère ces contraintes."},
+          {c:"c4",icon:"🏛",t:"Employeur ≠ lieu d'exercice",d:"Un agent EPCI ou syndicat a un interlocuteur différent pour muter (président EPCI, bureau syndical). Aucun outil ne modélise cette distinction critique."},
+        ].map((f,i)=>(
+          <div key={i} className={`prob-card ${f.c} fu d${i+3}`}>
+            <h4>{f.icon}  {f.t}</h4>
+            <p>{f.d}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── SLIDE 2 : SOLUTION ── */
+function SlideSolution() {
+  return (
+    <div className="slide-body">
+      <div className="eyebrow fu d1">La solution</div>
+      <h2 className="slide-title fu d2">PM•EMPLOI — la seule plateforme<br/><em>conçue pour la réglementation PM</em></h2>
+      <div className="feat-grid">
+        {[
+          {icon:"🔍",t:"Agrégation nationale",d:"Toutes les offres PM de France — communes, EPCI, syndicats, CDG — centralisées et mises à jour quotidiennement.",tag:"Agents & Lauréats"},
+          {icon:"⚡",t:"Matching réglementaire",d:"Calcul automatique de l'éligibilité, de l'engagement de servir restant et des priorités légales pour chaque profil.",tag:"Différenciateur clé",feat:true},
+          {icon:"🔒",t:"Anonymat total",d:"Noms masqués (M. D***t), coordonnées chiffrées. Déverrouillage uniquement par mairies vérifiées avec abonnement actif.",tag:"Protection agent"},
+          {icon:"🏛",t:"Espace employeur",d:"Communes, EPCI, syndicats : publication de postes, réception de candidatures, alertes légales automatiques.",tag:"Collectivités"},
+          {icon:"📍",t:"Interlocuteur identifié",d:"L'app identifie automatiquement le bon destinataire : maire, président d'EPCI ou bureau syndical selon la structure.",tag:"Procédures"},
+          {icon:"🔔",t:"Alertes sur mesure",d:"Offres filtrées par grade, région, type d'employeur et armement. Notification en temps réel dès publication.",tag:"Notifications"},
+        ].map((f,i)=>(
+          <div key={i} className={`feat-card fu d${i+2} ${f.feat?"featured":""}`}>
+            <div className="feat-icon">{f.icon}</div>
+            <h3>{f.t}</h3>
+            <p>{f.d}</p>
+            <span className="feat-tag">{f.tag} →</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── SLIDE 3 : DIFFÉRENCIATEURS ── */
+function SlideDiff() {
+  return (
+    <div className="slide-body">
+      <div className="eyebrow fu d1">Avantage concurrentiel</div>
+      <h2 className="slide-title fu d2">Ce qu'<em>aucun concurrent</em><br/>ne fait aujourd'hui</h2>
+      <div className="comp-table fu d3" style={{flex:1}}>
+        <div className="comp-row head">
+          <span>Plateforme</span><span>Tarif mairie</span><span>100% PM</span><span>Alertes légales</span><span>Anonymat</span>
+        </div>
+        {[
+          ["emploi-territorial.fr","Gratuit",false,false,false],
+          ["Gazette des Communes","Élevé",false,false,false],
+          ["CDG départementaux","Gratuit",true,false,false],
+        ].map(([n,p,s,a,an],i)=>(
+          <div key={i} className="comp-row body">
+            <span>{n}</span><span>{p}</span>
+            <span className={s?"cy":"cn"}>{s?"✓":"✗"}</span>
+            <span className={a?"cy":"cn"}>{a?"✓":"✗"}</span>
+            <span className={an?"cy":"cn"}>{an?"✓":"✗"}</span>
+          </div>
+        ))}
+        <div className="comp-row ours">
+          <span>🛡️ PM•EMPLOI</span><span>Dès 29 €/mois</span>
+          <span className="cy">✓</span><span className="cy">✓</span><span className="cy">✓</span>
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16}} className="fu d4">
+        {[
+          {val:"10 877 €",lbl:"Remboursement formation calculé automatiquement",col:"var(--amber)"},
+          {val:"3 priorités",lbl:"Légales valorisées dans l'algorithme de matching",col:"var(--cyan)"},
+          {val:"0",lbl:"Concurrent direct spécialisé police municipale",col:"var(--green)"},
+        ].map((r,i)=>(
+          <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:18}}>
+            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.8rem",color:r.col,letterSpacing:"-0.02em",marginBottom:6}}>{r.val}</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",lineHeight:1.5}}>{r.lbl}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── SLIDE 4 : ROI COLLECTIVITÉ ── */
+function SlideROI() {
+  const [communes, setCommunes] = useState(30);
+  const [cdg, setCdg] = useState(2);
+  const mrr = communes*49 + cdg*399;
+  const couts = mrr <= 5000 ? 760 : 1480;
+  const cot = Math.round(mrr*0.22);
+  const marge = mrr - couts - cot;
+
+  return (
+    <div className="slide-body">
+      <div className="eyebrow fu d1">Retour sur investissement</div>
+      <h2 className="slide-title fu d2">ROI <em>immédiat</em> pour la collectivité</h2>
+      <div className="roi-grid">
+        <div className="fu d2">
+          {[
+            {val:"10 877 €",lbl:"Remboursement formation évité dès le 1er recrutement bien ciblé",col:"var(--amber)"},
+            {val:"Ratio 222×",lbl:"ROI mois 1 : 49 € d'abonnement vs 10 877 € de valeur créée",col:"var(--green)"},
+            {val:"6 mois",lbl:"Délai de vacance économisé ≈ 22 500 € de masse salariale",col:"var(--cyan)"},
+          ].map((r,i)=>(
+            <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:"14px 18px",marginBottom:10,display:"flex",gap:16,alignItems:"center"}}>
+              <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.7rem",color:r.col,letterSpacing:"-0.02em",minWidth:120}}>{r.val}</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.45)",lineHeight:1.55}}>{r.lbl}</div>
+            </div>
+          ))}
+          <div style={{background:"rgba(200,151,58,0.08)",border:"1px solid rgba(200,151,58,0.18)",borderRadius:10,padding:"12px 16px",marginTop:4}}>
+            <div style={{fontSize:11,fontWeight:700,color:"var(--gold)",marginBottom:4,letterSpacing:"0.06em"}}>ARGUMENT CLÉ INVESTISSEUR</div>
+            <p style={{fontSize:12,color:"rgba(255,255,255,0.5)",lineHeight:1.6}}>
+              Le coût de <strong style={{color:"var(--gold)"}}>ne pas utiliser</strong> PM•EMPLOI est déjà visible — 6 mois de vacance, 10 877 € de surprise, candidat passé chez la commune voisine.
+            </p>
+          </div>
+        </div>
+        <div className="fu d3">
+          <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:14,padding:22,height:"100%",display:"flex",flexDirection:"column"}}>
+            <div style={{fontSize:13,fontWeight:600,color:"var(--white)",marginBottom:16}}>Simulateur de rentabilité mensuelle</div>
+            <div className="slider-wrap">
+              <label>Communes abonnées (49 €/mois)</label>
+              <input type="range" min="0" max="200" step="1" value={communes} onChange={e=>setCommunes(+e.target.value)}/>
+              <span className="slider-val">{communes}</span>
+            </div>
+            <div className="slider-wrap" style={{marginTop:10}}>
+              <label>CDG départementaux (399 €/mois)</label>
+              <input type="range" min="0" max="20" step="1" value={cdg} onChange={e=>setCdg(+e.target.value)}/>
+              <span className="slider-val">{cdg}</span>
+            </div>
+            <div className="sim-result" style={{marginTop:"auto"}}>
+              <div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginBottom:4}}>MRR simulé</div>
+                <div className="sim-mrr">{mrr.toLocaleString("fr-FR")} €</div>
+              </div>
+              <div style={{borderLeft:"1px solid rgba(255,255,255,0.08)",paddingLeft:20,flex:1}}>
+                <div className="sim-detail">
+                  Charges fixes : {couts.toLocaleString("fr-FR")} €<br/>
+                  Cotisations AE (22%) : {cot.toLocaleString("fr-FR")} €<br/>
+                  <strong style={{color:marge>=0?"var(--green)":"#EF4444",fontSize:14}}>
+                    Marge nette : {marge>=0?"+":""}{marge.toLocaleString("fr-FR")} €
+                  </strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SLIDE 5 : PROJECTIONS MRR ── */
+function SlideProjections() {
+  const chartRef = useRef(null);
+  const chartInst = useRef(null);
+
+  const months = [0,3,6,9,12,15,18,21,24,27,30,33,36];
+  const mrrC = [0,500,1200,2100,3200,4500,6000,7800,10000,12500,15500,19000,23000];
+  const mrrM = [0,800,2000,3500,5500,8000,11000,14500,18500,23000,27000,30000,32000];
+  const mrrF = [0,1200,3000,5500,9000,13000,18000,23000,27000,31000,36000,42000,48000];
+
+  useEffect(()=>{
+    if(!chartRef.current) return;
+    if(chartInst.current) chartInst.current.destroy();
+    chartInst.current = new Chart(chartRef.current,{
+      type:"line",
+      data:{
+        labels:months.map(m=>"M"+m),
+        datasets:[
+          {label:"Conservateur",data:mrrC,borderColor:"#185FA5",backgroundColor:"rgba(24,95,165,0.06)",fill:true,tension:0.4,pointRadius:3,borderWidth:2},
+          {label:"Central",     data:mrrM,borderColor:"#1D9E75",backgroundColor:"rgba(29,158,117,0.08)",fill:true,tension:0.4,pointRadius:3,borderWidth:2},
+          {label:"Favorable",   data:mrrF,borderColor:"#BA7517",backgroundColor:"rgba(186,117,23,0.05)",fill:true,tension:0.4,pointRadius:3,borderWidth:2},
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+" : "+c.parsed.y.toLocaleString("fr-FR")+" €/mois"}}},
+        scales:{
+          x:{grid:{color:"rgba(255,255,255,0.05)"},ticks:{color:"rgba(255,255,255,0.35)",font:{size:11}}},
+          y:{grid:{color:"rgba(255,255,255,0.05)"},ticks:{color:"rgba(255,255,255,0.35)",font:{size:11},callback:v=>v>=1000?Math.round(v/1000)+"k €":v+"€"}}
+        }
+      }
+    });
+    return ()=>{ if(chartInst.current) chartInst.current.destroy(); };
+  },[]);
+
+  const jalons = [
+    {p:"M6",e:"Phase payante",mrr:"2 000 €",c:"13",cum:"5 000 €"},
+    {p:"M9",e:"1er CDG signé",mrr:"3 500 €",c:"21+1 CDG",cum:"17 000 €"},
+    {p:"M12",e:"Pic élections 2026",mrr:"5 500 €",c:"47+2 CDG",cum:"38 000 €",hl:true},
+    {p:"M18",e:"Commissions actives",mrr:"11 000 €",c:"95+5 CDG",cum:"72 000 €"},
+    {p:"M24",e:"Transition SASU",mrr:"18 500 €",c:"149+9 CDG",cum:"83 000 €",hl:true},
+    {p:"M36",e:"Licence éditeur RH",mrr:"32 000 €",c:"250+18 CDG",cum:"~200 000 €"},
+  ];
+
+  return (
+    <div className="slide-body" style={{gap:0}}>
+      <div className="eyebrow fu d1">Projections financières</div>
+      <h2 className="slide-title fu d2" style={{fontSize:"clamp(1.6rem,2.5vw,2.2rem)",marginBottom:10}}>MRR <em>sur 36 mois</em> — 3 scénarios</h2>
+      <div className="proj-header fu d2">
+        {[["#185FA5","Conservateur — 23k€/mois M36"],["#1D9E75","Central — 32k€/mois M36"],["#BA7517","Favorable (élections) — 48k€/mois M36"]].map(([c,l])=>(
+          <div key={l} className="legend-item"><div className="legend-sq" style={{background:c}}/>{l}</div>
+        ))}
+      </div>
+      <div style={{position:"relative",width:"100%",height:"160px"}} className="fu d3">
+        <canvas ref={chartRef}></canvas>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8,marginTop:12}} className="fu d4">
+        {jalons.map((j,i)=>(
+          <div key={i} style={{background:j.hl?"rgba(26,63,196,0.15)":"rgba(255,255,255,0.04)",border:`1px solid ${j.hl?"rgba(26,63,196,0.3)":"rgba(255,255,255,0.08)"}`,borderRadius:10,padding:"10px 12px"}}>
+            <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1rem",color:"var(--gold)",marginBottom:3}}>{j.p}</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",marginBottom:6}}>{j.e}</div>
+            <div style={{fontSize:12,fontWeight:600,color:"var(--green)"}}>{j.mrr}</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:2}}>Cum. {j.cum}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── SLIDE 6 : TARIFS ── */
+function SlideTarifs() {
+  const plans = [
+    {prix:"29 €",nom:"Découverte",cible:"1-3 PM · sans engagement",bg:"#1A3FC4",badge:null},
+    {prix:"49 €",nom:"Essentiel",cible:"Standard + alertes légales",bg:"#B45309",badge:"Le plus choisi ⭐"},
+    {prix:"179 €",nom:"Premium",cible:"Grande ville · 15+ PM",bg:"#0F6E56",badge:null},
+    {prix:"399 €",nom:"CDG Dép.",cible:"Toutes communes affiliées",bg:"#534AB7",badge:"1,16 €/commune/mois"},
+    {prix:"599 €",nom:"CDG Région",cible:"Multi-dép. · API SIRH",bg:"#9D174D",badge:null},
+  ];
+  return (
+    <div className="slide-body">
+      <div className="eyebrow fu d1">Modèle tarifaire</div>
+      <h2 className="slide-title fu d2">Abonnements mensuels<br/><em>avec renouvellement automatique</em></h2>
+      <div className="plans-grid">
+        {plans.map((p,i)=>(
+          <div key={i} className={`plan-card fu d${i+2}`} style={{background:p.bg}}>
+            {p.badge && <div style={{fontSize:10,fontWeight:700,background:"rgba(255,255,255,0.15)",borderRadius:6,padding:"3px 8px",marginBottom:10,color:"rgba(255,255,255,0.9)",display:"inline-block"}}>{p.badge}</div>}
+            <div className="plan-price">{p.prix}</div>
+            <div className="plan-name">{p.nom}</div>
+            <div className="plan-cible">{p.cible}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginTop:14}} className="fu d6">
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 18px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--gold)",marginBottom:6,letterSpacing:"0.06em"}}>COMMISSION À LA PERFORMANCE</div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:"var(--amber)",marginBottom:4}}>250 €</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",lineHeight:1.5}}>Par recrutement réussi · Sans abonnement requis · Facturation à la prise de poste</div>
+        </div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 18px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--cyan)",marginBottom:6,letterSpacing:"0.06em"}}>LICENCE WHITE-LABEL</div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:"var(--cyan)",marginBottom:4}}>500 €+</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",lineHeight:1.5}}>Par mois · Intégration dans SIRH éditeur · Berger-Levrault, Ciril, MGDIS</div>
+        </div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 18px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--green)",marginBottom:6,letterSpacing:"0.06em"}}>FRANCHISE TVA</div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:"var(--green)",marginBottom:4}}>77 700 €</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",lineHeight:1.5}}>Seuil auto-entrepreneur · Transition SASU recommandée en année 2-3</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SLIDE 7 : SORTIE ── */
+function SlideSortie() {
+  const [arr, setArr] = useState(222000);
+  const [mult, setMult] = useState(3);
+  const valo = arr * mult;
+
+  const acqs = [
+    {nom:"Berger-Levrault",profil:"Leader RH FPT · 15 000 collectivités",desc:"Acquisition stratégique pour combler leur angle mort recrutement PM.",timing:"M24–M36",proba:"Forte",col:"#185FA5"},
+    {nom:"Ciril Group",profil:"SIRH territorial · 3 000 communes",desc:"Intégration native module paie FPT. Synergie immédiate produit.",timing:"M18–M30",proba:"Forte",col:"#1D9E75"},
+    {nom:"emploi-territorial.fr",profil:"1er job board FPT",desc:"Acquisition défensive — éviter qu'un concurrent ne capture la niche PM.",timing:"M12–M24",proba:"Moyenne",col:"#BA7517"},
+  ];
+
+  return (
+    <div className="slide-body">
+      <div className="eyebrow fu d1">Scénarios de sortie</div>
+      <h2 className="slide-title fu d2" style={{fontSize:"clamp(1.6rem,2.5vw,2.2rem)",marginBottom:10}}>
+        Valorisation <em>500k€ – 1M€</em> à M36
+      </h2>
+      <div className="exit-grid fu d2">
+        {acqs.map((a,i)=>(
+          <div key={i} className="exit-card" style={{borderColor:a.col}}>
+            <div className="exit-nom">{a.nom}</div>
+            <div className="exit-profil">{a.profil}</div>
+            <div className="exit-desc">{a.desc}</div>
+            <div className="exit-footer">
+              <span className="exit-timing">{a.timing}</span>
+              <span className="proba" style={{
+                background:a.proba==="Forte"?"rgba(34,197,94,0.12)":"rgba(251,191,36,0.12)",
+                color:a.proba==="Forte"?"#4ADE80":"#FCD34D"
+              }}>{a.proba}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginTop:14}} className="fu d3">
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:18}}>
+          <div style={{fontSize:12,fontWeight:600,color:"var(--white)",marginBottom:12}}>Simulateur de valorisation</div>
+          <div className="slider-wrap">
+            <label>ARR au moment de la cession</label>
+            <input type="range" min="50000" max="500000" step="10000" value={arr} onChange={e=>setArr(+e.target.value)}/>
+            <span className="slider-val">{Math.round(arr/1000)}k€</span>
+          </div>
+          <div className="slider-wrap" style={{marginTop:8}}>
+            <label>Multiple de valorisation</label>
+            <input type="range" min="1" max="6" step="0.5" value={mult} onChange={e=>setMult(+e.target.value)}/>
+            <span className="slider-val">{mult}×</span>
+          </div>
+        </div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:18,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",textAlign:"center"}}>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginBottom:8}}>Valorisation estimée</div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"2.6rem",color:"var(--green)",letterSpacing:"-0.03em",lineHeight:1}}>
+            {valo>=1000000?(valo/1000000).toFixed(1)+" M€":Math.round(valo/1000)+" k€"}
+          </div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:10,padding:"4px 12px",background:"rgba(34,197,94,0.1)",borderRadius:6,color:"#4ADE80"}}>
+            {valo<200000?"Trop tôt pour céder":valo<500000?"Attractif éditeur régional":"Cible Berger-Levrault / Ciril"}
+          </div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.25)",marginTop:8}}>Constituer SASU avant cession → flat tax 30%</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SLIDE 8 : CONCLUSION ── */
+function SlideCTA() {
+  return (
+    <div className="slide-body" style={{padding:0}}>
+      <div className="cta-center">
+        <div className="cta-glow"/>
+        <div style={{position:"absolute",fontFamily:"'DM Serif Display',serif",fontSize:"clamp(200px,25vw,320px)",color:"rgba(255,255,255,0.02)",bottom:"-6%",right:"-2%",lineHeight:1,letterSpacing:"-0.05em",userSelect:"none"}}>PM</div>
+
+        <div className="fu d1" style={{display:"inline-flex",alignItems:"center",gap:7,fontSize:11,fontWeight:600,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--gold)",background:"rgba(200,151,58,0.1)",border:"1px solid rgba(200,151,58,0.2)",padding:"5px 14px",borderRadius:100}}>
+          Rejoignez PM•EMPLOI
+        </div>
+
+        <h2 className="cta-title fu d2">
+          La première bourse nationale<br/><em>dédiée aux policiers municipaux</em>
+        </h2>
+
+        <p className="cta-sub fu d3">
+          Agents : créez votre profil et recevez les offres correspondant à votre situation réglementaire.<br/>
+          Collectivités : publiez vos postes et accédez à un vivier qualifié et anonymisé.
+        </p>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,maxWidth:700,width:"100%"}} className="fu d4">
+          {[
+            {v:"M8",l:"Seuil de\nrentabilité"},
+            {v:"32k€",l:"MRR cible\nà M36"},
+            {v:"200k€",l:"Revenu net\n36 mois"},
+            {v:"500k€+",l:"Valorisation\nestimée M36"},
+          ].map((s,i)=>(
+            <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:"14px",textAlign:"center"}}>
+              <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:"var(--gold)",letterSpacing:"-0.02em",lineHeight:1}}>{s.v}</div>
+              <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",marginTop:5,lineHeight:1.4,whiteSpace:"pre-line"}}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="cta-contact fu d5">
+          <a href="mailto:contact@capdim.fr" className="cta-btn main">
+            Demander une démo →
+          </a>
+          <a href="app.html" className="cta-btn ghost">
+            Accéder à la plateforme
+          </a>
+        </div>
+
+        <div className="fu d6" style={{fontSize:12,color:"rgba(255,255,255,0.2)"}}>
+          CAPDIM · contact@capdim.fr · capdimsas-sudo.github.io/pm-emploi
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SLIDE_COMPONENTS = [
+  SlideCouverture, SlideProbleme, SlideSolution, SlideDiff,
+  SlideROI, SlideProjections, SlideTarifs, SlideSortie, SlideCTA
+];
+
+const SLIDE_TAGS = [
+  "Couverture","Le problème","La solution","Avantages concurrentiels",
+  "ROI collectivité","Projections MRR","Modèle tarifaire","Scénarios de sortie","Contact & démo"
+];
+
+const BG_STYLES = [
+  {background:"var(--ink)"},
+  {background:"var(--ink)"},
+  {background:"var(--ink2)"},
+  {background:"var(--ink)"},
+  {background:"var(--ink2)"},
+  {background:"var(--ink)"},
+  {background:"var(--ink2)"},
+  {background:"var(--ink)"},
+  {background:"var(--ink)"},
+];
+
+function App() {
+  const [cur, setCur] = useState(0);
+  const [prev, setPrev] = useState(null);
+  const total = SLIDES.length;
+
+  const go = (n) => {
+    if(n < 0 || n >= total) return;
+    setPrev(cur);
+    setCur(n);
+    setTimeout(()=>setPrev(null), 500);
+  };
+
+  useEffect(()=>{
+    const onKey = (e) => {
+      if(e.key==="ArrowRight"||e.key==="ArrowDown"||e.key===" ") { e.preventDefault(); go(cur+1); }
+      if(e.key==="ArrowLeft"||e.key==="ArrowUp") { e.preventDefault(); go(cur-1); }
+    };
+    window.addEventListener("keydown", onKey);
+    return ()=>window.removeEventListener("keydown", onKey);
+  }, [cur]);
+
+  return (
+    <>
+      <div className="tricolor"/>
+      <div className="deck" style={BG_STYLES[cur]}>
+        {SLIDE_COMPONENTS.map((SlideComp, i) => (
+          <div
+            key={i}
+            className={`slide ${i===cur?"active":""} ${i===prev?"prev":""}`}
+            style={BG_STYLES[i]}
+          >
+            {i !== 0 && i !== total-1 && <Header tag={SLIDE_TAGS[i]}/>}
+            <SlideComp />
+          </div>
+        ))}
+      </div>
+      <div className="nav-bar">
+        <div className="kb-hint">
+          <span className="kb">←</span><span className="kb">→</span>
+          <span style={{marginLeft:4}}>ou clic pour naviguer</span>
+        </div>
+        <div className="nav-dots">
+          {SLIDES.map((_,i)=>(
+            <button key={i} className={`dot ${i===cur?"on":""}`} onClick={()=>go(i)} title={SLIDES[i]}/>
+          ))}
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <span className="slide-counter">{cur+1} / {total}</span>
+          <button className="nav-btn" onClick={()=>go(cur-1)} disabled={cur===0} style={{opacity:cur===0?0.3:1}}>← Précédent</button>
+          <button className={`nav-btn ${cur<total-1?"primary":""}`} onClick={()=>go(cur+1)} disabled={cur===total-1} style={{opacity:cur===total-1?0.3:1}}>
+            {cur<total-1?"Suivant →":"Fin"}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
