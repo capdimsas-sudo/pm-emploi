@@ -66,11 +66,15 @@ const FONCTIONS_MAIRIE = ["Maire","Adjoint au Maire","DGS","DRH","Chef de servic
 
 // ─── Abonnements mensuels ────────────────────────────────────────────────────
 const ABONNEMENTS = [
-  { id:"decouverte", label:"Découverte",     prix:29,  prixAnnuel:290,  remisePct:17, contactsMois:3,   illimite:false, color:"#3B82F6", cible:"Petite commune (1-3 PM)",  desc:"Sans engagement · Idéal pour tester" },
-  { id:"essentiel",  label:"Essentiel",      prix:49,  prixAnnuel:499,  remisePct:15, contactsMois:10,  illimite:false, color:"#F59E0B", cible:"Commune standard",          desc:"Alertes légales incluses" },
-  { id:"premium",    label:"Premium",        prix:179, prixAnnuel:1790, remisePct:17, contactsMois:999, illimite:true,  color:"#10B981", cible:"Grande ville (15+ PM)",     desc:"Tableau de bord · Exports · Matching" },
-  { id:"cdg_dept",   label:"CDG Département",prix:399, prixAnnuel:3990, remisePct:17, contactsMois:999, illimite:true,  color:"#8B5CF6", cible:"Centre de Gestion",         desc:"Toutes communes affiliées — 1,16 €/commune/mois" },
-  { id:"cdg_region", label:"CDG Région",     prix:599, prixAnnuel:5990, remisePct:17, contactsMois:999, illimite:true,  color:"#EC4899", cible:"Multi-départements",        desc:"Accès API/SIRH · Tableau de bord régional" },
+  { id:"decouverte",       label:"Découverte",          prix:29,  prixAnnuel:290,  remisePct:17, contactsMois:3,   illimite:false, color:"#3B82F6", cible:"Petite commune (1-3 PM)",                   desc:"Sans engagement · Idéal pour tester",                       affiliee:false },
+  { id:"essentiel",        label:"Essentiel",           prix:49,  prixAnnuel:499,  remisePct:15, contactsMois:10,  illimite:false, color:"#F59E0B", cible:"Commune standard",                           desc:"Alertes légales incluses",                                  affiliee:false },
+  { id:"premium",          label:"Premium",             prix:179, prixAnnuel:1790, remisePct:17, contactsMois:999, illimite:true,  color:"#10B981", cible:"Grande ville (15+ PM)",                      desc:"Tableau de bord · Exports · Matching",                      affiliee:false },
+  // Plan réservé aux communes dont le CDG est déjà abonné — tarif réduit −40 %
+  { id:"commune_affiliee", label:"Commune affiliée CDG",prix:29,  prixAnnuel:290,  remisePct:17, contactsMois:999, illimite:true,  color:"#06B6D4", cible:"Commune couverte par CDG abonné",             desc:"Autonomie complète · Déverrouillages mutualisés CDG · −40 %", affiliee:true,
+    prixRef:49,  // prix de référence (Essentiel plein tarif)
+    badge:"💡 Tarif affiliée" },
+  { id:"cdg_dept",         label:"CDG Département",     prix:399, prixAnnuel:3990, remisePct:17, contactsMois:999, illimite:true,  color:"#8B5CF6", cible:"Centre de Gestion",                          desc:"Toutes communes affiliées — 1,16 €/commune/mois",           affiliee:false },
+  { id:"cdg_region",       label:"CDG Région",          prix:599, prixAnnuel:5990, remisePct:17, contactsMois:999, illimite:true,  color:"#EC4899", cible:"Multi-départements",                         desc:"Accès API/SIRH · Tableau de bord régional",                 affiliee:false },
 ];
 
 // ─── Comptes démo préconfigurés ──────────────────────────────────────────────
@@ -85,49 +89,69 @@ const DEMO_ACCOUNTS = [
   { email:"drh@mairie-sete.fr",  code:"mairie2026", type:"mairie",
     commune:"Sète", dept:"Hérault (34)", siret:"21340270800011",
     typeEmployeur:"Commune", nomContact:"Sophie Leroy", fonction:"DRH",
-    tel:"04 67 74 74 74", abonnementId:"essentiel", quotaRestant:7, verified:true },
+    tel:"04 67 74 74 74", abonnementId:"essentiel", quotaRestant:7, verified:true,
+    // rattachementCDG : null = sans CDG | "couvert" = CDG abonné couvre la commune | "non_abonne" = CDG existe mais pas abonné
+    rattachementCDG: "couvert", nomCDG:"CDG Hérault 34", emailCDG:"cdg34@cdg34.fr" },
   { email:"cdg34@cdg34.fr",      code:"cdg2026",    type:"cdg",
     nom:"CDG Hérault", dept:"Hérault (34)", siret:"21340001400019",
     abonnementId:"cdg_dept", licencesIncluses:5,
     communesActives:["Sète","Montpellier","Béziers","Lunel","Agde"],
-    communesAffiliees:["Sète","Montpellier","Béziers","Lunel","Agde","Pézenas","Lodève","Clermont-l'Hérault","Frontignan","Palavas"] },
+    communesAffiliees:["Sète","Montpellier","Béziers","Lunel","Agde","Pézenas","Lodève","Clermont-l'Hérault","Frontignan","Palavas"],
+    // F2 — communes ayant souscrit un abonnement propre en parallèle
+    communesAbonneesPropre:["Montpellier","Frontignan"],
+    // F3 — statistiques d'usage par commune (mois en cours)
+    statsUsage:{
+      "Sète":              { contacts:4,  annonces:2, derniereActivite:"il y a 2 jours" },
+      "Montpellier":       { contacts:12, annonces:3, derniereActivite:"aujourd'hui" },
+      "Béziers":           { contacts:2,  annonces:1, derniereActivite:"il y a 5 jours" },
+      "Lunel":             { contacts:1,  annonces:0, derniereActivite:"il y a 12 jours" },
+      "Agde":              { contacts:3,  annonces:1, derniereActivite:"il y a 3 jours" },
+      "Pézenas":           { contacts:0,  annonces:0, derniereActivite:"Jamais" },
+      "Lodève":            { contacts:0,  annonces:0, derniereActivite:"Jamais" },
+      "Clermont-l'Hérault":{ contacts:0,  annonces:1, derniereActivite:"il y a 8 jours" },
+      "Frontignan":        { contacts:6,  annonces:2, derniereActivite:"hier" },
+      "Palavas":           { contacts:1,  annonces:0, derniereActivite:"il y a 20 jours" },
+    }
+  },
   { email:"admin@pm-emploi.fr",  code:"admin2026",  type:"admin" },
 ];
 
 // ─── Mock data enrichi ────────────────────────────────────────────────────────
+// autorisationEmployeur:false = profil masqué pour sa commune/CDG employeur (défaut = protection active)
+// autorisationEmployeur:true  = agent autorise explicitement son employeur à voir son profil
 const MOCK_OFFICERS = [
   { id:1, nom:"Dupont",  prenom:"Marc",    grade:"Brigadier-Chef",   categorie:"C", annees:12, commune:"Montpellier (34)", typeEmployeur:"Commune",
     origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2014-06-01", engagementSigne:"Non",
     regions:["Occitanie","PACA"], specialites:["Circulation / Stationnement","Îlotage"], dispo:"Immédiate", typeMobilite:"Mutation externe",
-    prioriteLegale:[], contact:"m.dupont@pm.fr | 06 12 34 56 78" },
+    prioriteLegale:[], autorisationEmployeur:false, contact:"m.dupont@pm.fr | 06 12 34 56 78" },
   { id:2, nom:"Leroy",   prenom:"Sophie",  grade:"Gardien Principal", categorie:"C", annees:7,  commune:"Bordeaux (33)", typeEmployeur:"EPCI à fiscalité propre",
     origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2018-09-01", engagementSigne:"Non",
     regions:["Nouvelle-Aquitaine","Occitanie"], specialites:["LAPI","VTT / Moto"], dispo:"3 mois", typeMobilite:"Mutation externe",
-    prioriteLegale:["conjoint"], contact:"s.leroy@pm.fr | 06 98 76 54 32" },
+    prioriteLegale:["conjoint"], autorisationEmployeur:false, contact:"s.leroy@pm.fr | 06 98 76 54 32" },
   { id:3, nom:"Moreau",  prenom:"Julien",  grade:"Chef de Service",   categorie:"B", annees:19, commune:"Lyon (69)", typeEmployeur:"Commune",
     origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2007-04-01", engagementSigne:"Non",
     regions:["AURA","Bourgogne-FC"], specialites:["Management / RH","Juridique","ATHOS"], dispo:"6 mois", typeMobilite:"Mutation externe",
-    prioriteLegale:[], contact:"j.moreau@pm.fr | 06 55 44 33 22" },
+    prioriteLegale:[], autorisationEmployeur:false, contact:"j.moreau@pm.fr | 06 55 44 33 22" },
   { id:4, nom:"Bernard", prenom:"Aurélie", grade:"Brigadier",         categorie:"C", annees:5,  commune:"Nantes (44)", typeEmployeur:"Commune",
     origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2021-03-01", engagementSigne:"Oui",
     regions:["Pays de la Loire","Bretagne"], specialites:["Médiation","Prévention scolaire"], dispo:"Immédiate", typeMobilite:"Toutes options",
-    prioriteLegale:["rqth"], contact:"a.bernard@pm.fr | 06 11 22 33 44" },
+    prioriteLegale:["rqth"], autorisationEmployeur:false, contact:"a.bernard@pm.fr | 06 11 22 33 44" },
   { id:5, nom:"Petit",   prenom:"Thomas",  grade:"Directeur de PM",   categorie:"A", annees:24, commune:"Toulouse (31)", typeEmployeur:"Commune",
     origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2002-01-01", engagementSigne:"Non",
     regions:["Occitanie","Nouvelle-Aquitaine"], specialites:["Management / RH","Juridique","Armement"], dispo:"6 mois", typeMobilite:"Mutation externe",
-    prioriteLegale:[], contact:"t.petit@pm.fr | 06 77 88 99 00" },
+    prioriteLegale:[], autorisationEmployeur:false, contact:"t.petit@pm.fr | 06 77 88 99 00" },
   { id:6, nom:"Garcia",  prenom:"Isabelle",grade:"Gardien",           categorie:"C", annees:2,  commune:"Marseille (13)", typeEmployeur:"Syndicat intercommunal",
     origine:"Lauréat de concours (1er poste)", statut:"laureat", dateTitularisation:"", engagementSigne:"Non",
     regions:["PACA"], specialites:["Prévention scolaire","Numérique"], dispo:"Immédiate", typeMobilite:"Toutes options",
-    prioriteLegale:[], contact:"i.garcia@pm.fr | 06 33 44 55 66" },
+    prioriteLegale:[], autorisationEmployeur:false, contact:"i.garcia@pm.fr | 06 33 44 55 66" },
   { id:7, nom:"Martin",  prenom:"Cédric",  grade:"Brigadier-Chef",   categorie:"C", annees:15, commune:"Strasbourg (67)", typeEmployeur:"EPCI à fiscalité propre",
     origine:"Détachement Police Nationale", statut:"titulaire", dateTitularisation:"2010-06-01", engagementSigne:"Non",
     regions:["Grand Est","Île-de-France"], specialites:["Cynophile","LAPI","VTT / Moto"], dispo:"1 mois", typeMobilite:"Détachement",
-    prioriteLegale:["conjoint"], contact:"c.martin@pm.fr | 06 44 55 66 77" },
+    prioriteLegale:["conjoint"], autorisationEmployeur:false, contact:"c.martin@pm.fr | 06 44 55 66 77" },
   { id:8, nom:"Roux",    prenom:"Nathalie",grade:"Gardien Principal", categorie:"C", annees:9,  commune:"Nice (06)", typeEmployeur:"Commune",
     origine:"Policier municipal en poste", statut:"titulaire", dateTitularisation:"2017-09-01", engagementSigne:"Non",
     regions:["PACA","Occitanie"], specialites:["Multilingue","Drone","Vidéoprotection"], dispo:"3 mois", typeMobilite:"Mutation externe",
-    prioriteLegale:["aidant"], contact:"n.roux@pm.fr | 06 22 33 44 55" },
+    prioriteLegale:["aidant"], autorisationEmployeur:false, contact:"n.roux@pm.fr | 06 22 33 44 55" },
 ];
 
 const MOCK_DEMANDES = [
@@ -154,13 +178,16 @@ function App() {
   const [abonnement, setAbonnement] = useState(null);
   const [contactsRestants, setContactsRestants] = useState(0);
   const [facturation, setFacturation] = useState("mensuel");
-  const [mairieVerifiee, setMairieVerifiee] = useState(false);
+  // null = pas de compte · "compte" = compte créé (SIRET validé, peut publier annonces)
+  // "verifie" = vérifié + abonné (accès profils PM complet)
+  const [mairieStatut, setMairieStatut] = useState(null);
   const [officers, setOfficers]   = useState(MOCK_OFFICERS);
   const [annonces, setAnnonces]   = useState(MOCK_ANNONCES);
   const [demandes, setDemandes]   = useState(MOCK_DEMANDES);
   const [notif, setNotif]         = useState(null);
   const [adminOk, setAdminOk]     = useState(false);
   const [adminPin, setAdminPin]   = useState("");
+  const [adminOnglet, setAdminOnglet] = useState("mairies"); // "mairies"|"agents"|"annonces"|"abonnements"
   const [motifRejet, setMotifRejet] = useState("");
   const [filterRegion, setFilterRegion] = useState("Toutes");
   const [filterDispo, setFilterDispo]   = useState("Toutes");
@@ -176,6 +203,21 @@ function App() {
   const [mdpVisible, setMdpVisible]   = useState(false);
   const [loginError, setLoginError]   = useState("");
   const [modeRecherche, setModeRecherche] = useState("actif"); // pour dashboard PM
+  const [autorisationEmployeur, setAutorisationEmployeur] = useState(false); // opt-in PM
+  const [preferenceConsentement, setPreferenceConsentement] = useState("refus_tacite"); // "refus_tacite"|"acceptation_tacite"
+  // Licences CDG actives — Set de noms de communes, modifiable en temps réel
+  const [cdgLicences, setCdgLicences] = useState(
+    new Set(["Sète","Montpellier","Béziers","Lunel","Agde"])
+  );
+  // Demandes de déverrouillage en attente de consentement agent
+  // statut : "en_attente" | "accepte" | "refuse" | "expire"
+  const [demandesConsentement, setDemandesConsentement] = useState([
+    // Mock : 1 demande pré-existante pour la démo agent
+    { id:"dc1", officerId:1, mairieNom:"Mairie de Mâcon", maiریeDept:"Saône-et-Loire (71)",
+      dateRequete: new Date(Date.now() - 12 * 3600000).toISOString(), // il y a 12h
+      statut:"en_attente", creditReserve:1 }
+  ]);
+  const DELAI_H = 72; // délai de consentement en heures
 
   const [newOfficer, setNewOfficer] = useState({
     nom:"", prenom:"", grade:"Gardien", annees:"", commune:"", typeEmployeur:"Commune",
@@ -197,6 +239,21 @@ function App() {
     setTimeout(() => setNotif(null), 4000);
   };
 
+  // ── Bug 6 — Navigation SPA : pushState + popstate ────────────────────────
+  const naviguer = (vue, params = {}) => {
+    window.history.pushState({ vue, ...params }, "", `#${vue}`);
+    setView(vue);
+    if (params.role !== undefined) setRole(params.role);
+  };
+
+  // Écouter le bouton retour navigateur
+  if (typeof window !== "undefined") {
+    window.onpopstate = (e) => {
+      if (e.state?.vue) setView(e.state.vue);
+      else setView("accueil");
+    };
+  }
+
   // ── Connexion / Déconnexion ───────────────────────────────────────────────
   const handleConnexion = () => {
     setLoginError("");
@@ -208,12 +265,12 @@ function App() {
     setLoginEmail(""); setLoginCode(""); setMdpVisible(false);
     setModal(null);
     if (compte.type === "mairie" && compte.verified) {
-      setMairieVerifiee(true);
+      setMairieStatut("verifie");
       const ab = ABONNEMENTS.find(a => a.id === compte.abonnementId);
       if (ab) { setAbonnement(ab); setContactsRestants(compte.quotaRestant || (ab.illimite ? 9999 : ab.contactsMois)); }
     }
     if (compte.type === "cdg") {
-      setMairieVerifiee(true);
+      setMairieStatut("verifie");
       const ab = ABONNEMENTS.find(a => a.id === compte.abonnementId);
       if (ab) { setAbonnement(ab); setContactsRestants(9999); }
     }
@@ -225,26 +282,73 @@ function App() {
 
   const handleDeconnexion = () => {
     setUserType(null); setUserConnecte(false); setUserProfil(null);
-    setMairieVerifiee(false); setAbonnement(null); setContactsRestants(0);
+    setMairieStatut(null); setAbonnement(null); setContactsRestants(0);
     setAdminOk(false); setView("accueil");
     notify("Déconnexion réussie");
   };
 
   const souscribreAbonnement = (ab) => {
-    if (!mairieVerifiee) { setModal({ type:"non_verifiee" }); return; }
-    setAbonnement(ab);
-    setContactsRestants(ab.illimite ? 9999 : ab.contactsMois);
-    setModal(null);
-    notify(`Abonnement ${ab.label} activé — ${ab.illimite ? "contacts illimités" : `${ab.contactsMois} contacts/mois`}`);
+    if (!mairieStatut) { setModal({ type:"non_verifiee" }); return; }
+    // Point 2 — modale de confirmation intermédiaire
+    setModal({ type:"confirmer_abonnement", ab });
   };
 
+  const confirmerAbonnement = (ab) => {
+    setAbonnement(ab);
+    setMairieStatut("verifie");
+    setContactsRestants(ab.illimite ? 9999 : ab.contactsMois);
+    setModal(null);
+    notify(`✅ Abonnement ${ab.label} activé — ${ab.illimite ? "contacts illimités" : `${ab.contactsMois} contacts/mois`}. Un email de confirmation a été envoyé.`);
+  };
+
+  // ── Calcul du temps restant sur une demande de consentement ─────────────
+  const tempsRestant = (dateRequete) => {
+    const ecoulé = (Date.now() - new Date(dateRequete).getTime()) / 3600000;
+    const restant = Math.max(0, DELAI_H - ecoulé);
+    if (restant <= 0) return null;
+    if (restant < 1) return `${Math.round(restant * 60)} min`;
+    return `${Math.round(restant)}h`;
+  };
+
+  // ── Déverrouillage → crée une demande de consentement ───────────────────
   const deverrouiller = (id) => {
-    if (!mairieVerifiee) { setModal({ type:"non_verifiee" }); return; }
-    if (!abonnement) { setModal({ type:"abonnement" }); return; }
-    if (contactsRestants <= 0) { notify("Quota mensuel atteint — renouvellement le 1er du mois.", "error"); return; }
-    setUnlocked(p => new Set([...p, id]));
+    if (!mairieStatut)               { setModal({ type:"non_verifiee" }); return; }
+    if (mairieStatut !== "verifie")  { setModal({ type:"non_abonne" }); return; }
+    if (!abonnement)                 { setModal({ type:"abonnement" }); return; }
+    if (contactsRestants <= 0)       { notify("Quota mensuel atteint — renouvellement le 1er du mois.", "error"); return; }
+    // Demande déjà en cours pour ce profil ?
+    const existante = demandesConsentement.find(d => d.officerId === id && d.statut === "en_attente");
+    if (existante) { notify("Une demande est déjà en attente pour ce profil.", "error"); return; }
+    // Crée la demande — le crédit est réservé (pas encore consommé)
+    const nouvelleDemande = {
+      id: `dc${Date.now()}`,
+      officerId: id,
+      mairieNom: userProfil?.commune ? `Mairie de ${userProfil.commune}` : "Collectivité",
+      mairíeDept: userProfil?.dept || "",
+      dateRequete: new Date().toISOString(),
+      statut: "en_attente",
+      creditReserve: 1,
+    };
+    setDemandesConsentement(p => [...p, nouvelleDemande]);
+    // Réserver le crédit (décompté mais pas définitif)
     if (!abonnement.illimite) setContactsRestants(c => c - 1);
-    notify(`Contact déverrouillé ! ${abonnement.illimite ? "Contacts illimités." : `Reste : ${contactsRestants - 1} ce mois.`}`);
+    notify(`✉️ Demande envoyée à l'agent — réponse attendue sous ${DELAI_H}h. Crédit réservé.`);
+  };
+
+  // ── Réponse de l'agent au consentement ──────────────────────────────────
+  const repondreConsentement = (demandeId, decision) => {
+    setDemandesConsentement(p => p.map(d => d.id === demandeId
+      ? { ...d, statut: decision, dateReponse: new Date().toISOString() }
+      : d
+    ));
+    if (decision === "accepte") {
+      const demande = demandesConsentement.find(d => d.id === demandeId);
+      if (demande) setUnlocked(prev => new Set([...prev, demande.officerId]));
+      notify("✅ Accès accordé — la mairie peut voir vos coordonnées.");
+    } else {
+      // Refus → restituer le crédit réservé (en démo : simple notification)
+      notify("❌ Accès refusé — le crédit sera restitué à la mairie.");
+    }
   };
 
   const sauvegarderPolicier = () => {
@@ -260,8 +364,10 @@ function App() {
     if (isBadEmail(newMairie.email)) { notify("Email non institutionnel refusé","error"); return; }
     if (newMairie.siret.length !== 14) { notify("SIRET doit comporter 14 chiffres","error"); return; }
     setDemandes(p => [{ ...newMairie, id:`m${p.length+1}`, date: new Date().toLocaleDateString("fr-FR"), statut:"en_attente" }, ...p]);
+    // Compte créé → niveau "compte" : peut publier des annonces immédiatement
+    setMairieStatut("compte");
     setRole(null); setView("accueil");
-    notify("Dossier soumis — réponse sous 48h ouvrées.");
+    notify("✅ Compte créé — vous pouvez publier des annonces. Accès aux profils PM après validation sous 48h.");
   };
 
   const publierAnnonce = () => {
@@ -273,8 +379,8 @@ function App() {
 
   const validerMairie = (id) => {
     setDemandes(p => p.map(d => d.id===id ? { ...d, statut:"validee" } : d));
-    setMairieVerifiee(true);
-    notify("Mairie validée — accès à la plateforme activé.");
+    setMairieStatut("verifie");
+    notify("Mairie validée — accès complet aux profils PM activé.");
   };
 
   const rejeterMairie = (id) => {
@@ -286,12 +392,42 @@ function App() {
 
   const toggleArr = (arr, val) => arr.includes(val) ? arr.filter(x => x!==val) : [...arr, val];
 
+  // ── Règle 1 — Exclusion automatique employeur actuel ─────────────────────
+  // Extrait le code département depuis une chaîne type "Montpellier (34)" ou "Hérault (34)"
+  const getDept = (str) => (str||"").match(/\((\d+)\)/)?.[1] || null;
+
+  const isVisiblePour = (officer, profil, type) => {
+    // Lauréat de concours : pas d'employeur → toujours visible
+    if (officer.statut === "laureat") return true;
+    // Si l'agent connecté consulte sa propre liste : son toggle prime
+    const effectiveAutorisation = (userType === "pm" && userProfil)
+      ? autorisationEmployeur  // toggle live du dashboard PM
+      : officer.autorisationEmployeur;  // valeur stockée dans le mock
+    if (effectiveAutorisation) return true;
+    if (!profil || !type) return true; // visiteur non connecté
+    const deptAgent = getDept(officer.commune);
+    if (!deptAgent) return true;
+    if (type === "mairie") {
+      const deptMairie = getDept(profil.dept);
+      if (deptMairie && deptMairie === deptAgent) return false;
+    }
+    if (type === "cdg") {
+      const deptCdg = getDept(profil.dept);
+      if (deptCdg && deptCdg === deptAgent) return false;
+    }
+    return true;
+  };
+
   const filteredOfficers = officers.filter(o => {
     const rOk = filterRegion === "Toutes" || (o.regions||[]).includes(filterRegion);
     const dOk = filterDispo  === "Toutes" || o.dispo === filterDispo;
     const cOk = filterCat    === "Toutes" || (GRADES_CAT[o.grade] || "C") === filterCat;
     const sOk = filterStatut === "Tous"   || (filterStatut === "laureat" ? o.statut === "laureat" : o.statut === "titulaire");
-    return rOk && dOk && cOk && sOk;
+    const vOk = isVisiblePour(o, userProfil, userType);
+    // Bug 1 — exclure l'agent connecté s'il est en mode veille passive
+    const veille = userType === "pm" && userProfil && modeRecherche === "veille"
+      && o.email === userProfil.contact?.split(" | ")[0];
+    return rOk && dOk && cOk && sOk && vOk && !veille;
   });
 
   const enAttente = demandes.filter(d => d.statut === "en_attente").length;
@@ -347,12 +483,12 @@ function App() {
           {/* Nav centrale */}
           <nav style={{ display:"flex", gap:2, alignItems:"center" }}>
             {[["accueil","🏠"],["policiers","👮 Policiers"],["annonces","📋 Annonces"],["tarifs","💳 Tarifs"]].map(([v,l])=>(
-              <div key={v} style={S.navlink(view===v)} onClick={()=>setView(v)}>{l}</div>
+              <div key={v} style={S.navlink(view===v)} onClick={()=>naviguer(v)}>{l}</div>
             ))}
-            {userConnecte && userType==="pm"    && <div style={{...S.navlink(view==="dashboard_pm"),    color:view==="dashboard_pm"   ?"#60A5FA":"#8FA3BB"}} onClick={()=>setView("dashboard_pm")}>   👮 Mon espace</div>}
-            {userConnecte && userType==="mairie" && <div style={{...S.navlink(view==="dashboard_mairie"),color:view==="dashboard_mairie"?"#4ade80":"#8FA3BB"}} onClick={()=>setView("dashboard_mairie")}>🏛️ Mon espace</div>}
-            {userConnecte && userType==="cdg"    && <div style={{...S.navlink(view==="dashboard_cdg"),  color:view==="dashboard_cdg"  ?"#c084fc":"#8FA3BB"}} onClick={()=>setView("dashboard_cdg")}>  🗺️ Mon espace</div>}
-            <div style={{ ...S.navlink(view==="admin"), color:view==="admin"?"#F59E0B":"#4A6080", position:"relative" }} onClick={()=>setView("admin")}>
+            {userConnecte && userType==="pm"    && <div style={{...S.navlink(view==="dashboard_pm"),    color:view==="dashboard_pm"   ?"#60A5FA":"#8FA3BB"}} onClick={()=>naviguer("dashboard_pm")}>   👮 Mon espace</div>}
+            {userConnecte && userType==="mairie" && <div style={{...S.navlink(view==="dashboard_mairie"),color:view==="dashboard_mairie"?"#4ade80":"#8FA3BB"}} onClick={()=>naviguer("dashboard_mairie")}>🏛️ Mon espace</div>}
+            {userConnecte && userType==="cdg"    && <div style={{...S.navlink(view==="dashboard_cdg"),  color:view==="dashboard_cdg"  ?"#c084fc":"#8FA3BB"}} onClick={()=>naviguer("dashboard_cdg")}>  🗺️ Mon espace</div>}
+            <div style={{ ...S.navlink(view==="admin"), color:view==="admin"?"#F59E0B":"#4A6080", position:"relative" }} onClick={()=>naviguer("admin")}>
               ⚙️
               {enAttente > 0 && <span style={{ position:"absolute", top:2, right:2, width:7, height:7, background:"#EF4444", borderRadius:"50%", border:"1px solid #070D1A" }} />}
             </div>
@@ -362,6 +498,7 @@ function App() {
             {userConnecte ? (
               <>
                 {abonnement && <div style={S.chip("#052e16","#4ade80","#14532d")}>{abonnement.label} {abonnement.illimite?"·∞":`· ${contactsRestants}`}</div>}
+                {!abonnement && mairieStatut==="compte" && <div style={S.chip("#1c1006","#fbbf24","#78350f")}>⏳ Vérification en attente</div>}
                 <div style={S.chip("#1E3A5F","#93C5FD","#2D5A8E")}>
                   {({pm:"👮",mairie:"🏛️",cdg:"🗺️",admin:"⚙️"})[userType]} {userProfil?.prenom || userProfil?.commune || userProfil?.nom}
                 </div>
@@ -464,7 +601,7 @@ function App() {
                 <option value="titulaire">Titulaires en mutation</option>
                 <option value="laureat">Lauréats (1er poste)</option>
               </select>
-              <button style={{ ...S.btnP, fontSize:12 }} onClick={()=>mairieVerifiee?setModal({type:"abonnement"}):setModal({type:"non_verifiee"})}>💳 Abonnement</button>
+              <button style={{ ...S.btnP, fontSize:12 }} onClick={()=>mairieStatut?setModal({type:"abonnement"}):setModal({type:"non_verifiee"})}>💳 Abonnement</button>
             </div>
           </div>
 
@@ -472,8 +609,10 @@ function App() {
           <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:10, padding:"10px 16px", marginBottom:20, display:"flex", alignItems:"center", gap:10 }}>
             <span style={{ fontSize:16 }}>🔒</span>
             <span style={{ fontSize:13, color:"#8FA3BB" }}>
-              <strong style={{ color:"#60A5FA" }}>Données protégées</strong> — noms masqués, contacts chiffrés. Accès réservé aux mairies vérifiées avec abonnement actif.
-              {!mairieVerifiee && <span style={{ color:"#F59E0B" }}> → <span style={{ cursor:"pointer", textDecoration:"underline" }} onClick={()=>{setRole("mairie");setView("inscription")}}>Demander la vérification</span></span>}
+              <strong style={{ color:"#60A5FA" }}>Données protégées</strong> — noms masqués, contacts chiffrés.
+              {!mairieStatut && <span style={{ color:"#F59E0B" }}> Accès réservé aux mairies avec compte vérifié et abonnement actif. → <span style={{ cursor:"pointer", textDecoration:"underline" }} onClick={()=>setModal({type:"connexion"})}>Se connecter</span> ou <span style={{ cursor:"pointer", textDecoration:"underline" }} onClick={()=>{setRole("mairie");setView("inscription")}}>Créer un compte</span></span>}
+              {mairieStatut==="compte" && <span style={{ color:"#fbbf24" }}> Votre compte est en cours de vérification (48h). Vous pouvez publier des annonces dès maintenant. → <span style={{ cursor:"pointer", textDecoration:"underline" }} onClick={()=>setModal({type:"abonnement"})}>Souscrire un abonnement</span></span>}
+              {mairieStatut==="verifie" && <span style={{ color:"#4ade80" }}> ✅ Accès complet — {abonnement?.illimite ? "contacts illimités" : `${contactsRestants} contact(s) restant(s) ce mois`}</span>}
             </span>
           </div>
 
@@ -502,9 +641,19 @@ function App() {
                           {isUnlocked ? `${o.prenom} ${o.nom}` : anonName}
                         </span>
                         {!isUnlocked && <span style={{ fontSize:9, background:"#1E3A5F", color:"#60A5FA", padding:"1px 5px", borderRadius:3, fontWeight:700 }}>ANONYME</span>}
-                        {o.prioriteLegale?.includes("conjoint") && <span style={S.chip("#1e3a5f","#93C5FD","#2D5A8E")}>⭐ Priorité légale</span>}
-                        {o.prioriteLegale?.includes("rqth") && <span style={S.chip("#1e3a5f","#fbbf24","#78350f")}>♿ RQTH</span>}
-                        {o.prioriteLegale?.includes("aidant") && <span style={S.chip("#1e3a5f","#a5b4fc","#3730a3")}>🤝 Proche aidant</span>}
+                        {/* Priorités légales : badge GÉNÉRIQUE avant déverrouillage — détail uniquement après consentement */}
+                        {(o.prioriteLegale||[]).length > 0 && (() => {
+                          const isUnlocked = unlocked.has(o.id) || demandesConsentement.some(d => d.officerId===o.id && d.statut==="accepte");
+                          if (isUnlocked) return (
+                            <>
+                              {o.prioriteLegale.includes("conjoint") && <span style={S.chip("#1e3a5f","#93C5FD","#2D5A8E")}>👨‍👩‍👧 Rapprochement conjoint</span>}
+                              {o.prioriteLegale.includes("rqth")    && <span style={S.chip("#1e3a5f","#fbbf24","#78350f")}>♿ RQTH</span>}
+                              {o.prioriteLegale.includes("aidant")  && <span style={S.chip("#1e3a5f","#a5b4fc","#3730a3")}>🤝 Proche aidant</span>}
+                            </>
+                          );
+                          // Avant déverrouillage : badge générique uniquement (RGPD — données de santé)
+                          return <span style={S.chip("#1e3a5f","#93C5FD","#2D5A8E")}>⭐ Priorité légale active</span>;
+                        })()}
                       </div>
                       <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:3 }}>
                         <span style={{ fontSize:12, color:"#60A5FA", fontWeight:600 }}>{o.grade}</span>
@@ -556,21 +705,37 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Contact */}
-                  {isUnlocked ? (
-                    <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"9px 12px" }}>
-                      <div style={{ fontSize:10, color:"#22c55e", fontWeight:700, marginBottom:4, letterSpacing:"0.8px" }}>✅ COORDONNÉES DÉVERROUILLÉES</div>
-                      <div style={{ fontSize:13, color:"#86efac" }}>{o.contact}</div>
-                      <div style={{ fontSize:11, color:"#4A6080", marginTop:4 }}>⏱️ Préavis légal : 3 mois à compter de la notification formelle</div>
-                    </div>
-                  ) : (
-                    <div style={{ background:"rgba(7,13,26,.9)", border:"1px dashed #1E3A5F", borderRadius:8, padding:"10px 12px" }}>
-                      <div style={{ fontSize:12, color:"#4A6080", marginBottom:7, filter:"blur(4px)", userSelect:"none" }}>x.xxxxx@xxxx.fr | 06 XX XX XX XX</div>
-                      <button style={{ ...S.btnP, width:"100%", fontSize:12 }} onClick={()=>deverrouiller(o.id)}>
-                        🔓 {!mairieVerifiee ? "Mairie non vérifiée" : !abonnement ? "Souscrire un abonnement" : "Voir les coordonnées"}
-                      </button>
-                    </div>
-                  )}
+                  {/* Contact — 3 états */}
+                  {(() => {
+                    const isUnlocked = unlocked.has(o.id);
+                    const demandeActive = demandesConsentement.find(d => d.officerId === o.id && d.statut === "en_attente");
+                    const demandeAcceptee = demandesConsentement.find(d => d.officerId === o.id && d.statut === "accepte");
+                    if (isUnlocked || demandeAcceptee) return (
+                      <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"9px 12px" }}>
+                        <div style={{ fontSize:10, color:"#22c55e", fontWeight:700, marginBottom:4, letterSpacing:"0.8px" }}>✅ COORDONNÉES DÉVERROUILLÉES — CONSENTEMENT OBTENU</div>
+                        <div style={{ fontSize:13, color:"#86efac" }}>{o.contact}</div>
+                        <div style={{ fontSize:11, color:"#4A6080", marginTop:4 }}>⏱️ Préavis légal : 3 mois à compter de la notification formelle</div>
+                      </div>
+                    );
+                    if (demandeActive) return (
+                      <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:8, padding:"9px 12px" }}>
+                        <div style={{ fontSize:10, color:"#fbbf24", fontWeight:700, marginBottom:4, letterSpacing:"0.8px" }}>⏳ EN ATTENTE DU CONSENTEMENT DE L'AGENT</div>
+                        <div style={{ fontSize:12, color:"#92400e", marginBottom:4 }}>
+                          Demande envoyée · Réponse attendue sous {tempsRestant(demandeActive.dateRequete) || "délai expiré"} · Refus tacite si pas de réponse
+                        </div>
+                        <div style={{ fontSize:11, color:"#4A6080" }}>Crédit réservé — restitué automatiquement en cas de refus</div>
+                      </div>
+                    );
+                    return (
+                      <div style={{ background:"rgba(7,13,26,.9)", border:"1px dashed #1E3A5F", borderRadius:8, padding:"10px 12px" }}>
+                        <div style={{ fontSize:12, color:"#4A6080", marginBottom:7, filter:"blur(4px)", userSelect:"none" }}>x.xxxxx@xxxx.fr | 06 XX XX XX XX</div>
+                        <button style={{ ...S.btnP, width:"100%", fontSize:12 }} onClick={()=>deverrouiller(o.id)}>
+                          🔓 {!mairieStatut ? "Créer un compte mairie" : mairieStatut==="compte" ? "Souscrire un abonnement" : `Demander l'accès — consentement requis`}
+                        </button>
+                        {mairieStatut==="verifie" && <div style={{ fontSize:10, color:"#2D4A6A", marginTop:5, textAlign:"center" }}>✉️ L'agent sera notifié · Délai de réponse : {DELAI_H}h · Refus tacite par défaut</div>}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
@@ -584,7 +749,10 @@ function App() {
               <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800 }}>Annonces des employeurs</div>
               <p style={{ color:"#4A6080", fontSize:13, marginTop:4 }}>Communes, EPCI, Syndicats, CDG — vérifiés uniquement</p>
             </div>
-            <button style={S.btnP} onClick={()=>{setRole("mairie");setView("inscription")}}>+ Publier une annonce</button>
+            <button style={S.btnP} onClick={()=>{
+              setRole("mairie");
+              naviguer("inscription");
+            }}>+ Publier une annonce</button>
           </div>
           <div style={{ display:"grid", gap:14 }}>
             {annonces.map(a => (
@@ -628,9 +796,14 @@ function App() {
             ))}
           </div>
 
-          {!mairieVerifiee && <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:10, padding:"13px 20px", marginBottom:32, textAlign:"center", fontSize:14 }}>
-            <span style={{ color:"#fbbf24" }}>⚠️ Votre mairie n'est pas encore vérifiée — </span>
-            <span style={{ color:"#F59E0B", cursor:"pointer", textDecoration:"underline" }} onClick={()=>{setRole("mairie");setView("inscription")}}>Déposer un dossier →</span>
+          {!mairieStatut && <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:10, padding:"13px 20px", marginBottom:32, textAlign:"center", fontSize:14 }}>
+            <span style={{ color:"#fbbf24" }}>⚠️ Vous devez avoir un compte pour souscrire — </span>
+            <span style={{ color:"#F59E0B", cursor:"pointer", textDecoration:"underline" }} onClick={()=>setModal({type:"connexion"})}>Se connecter</span>
+            <span style={{ color:"#fbbf24" }}> ou </span>
+            <span style={{ color:"#F59E0B", cursor:"pointer", textDecoration:"underline" }} onClick={()=>{setRole("mairie");setView("inscription")}}>Créer un compte gratuit →</span>
+          </div>}
+          {mairieStatut==="compte" && <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:10, padding:"13px 20px", marginBottom:32, textAlign:"center", fontSize:14 }}>
+            <span style={{ color:"#4ade80" }}>✅ Compte créé — vous pouvez souscrire un abonnement pour accéder aux profils PM.</span>
           </div>}
 
           {/* ── Grille 3 colonnes · 2 rangées ────────────────────────
@@ -646,7 +819,8 @@ function App() {
           </div>
 
           {(() => {
-            const communes = ABONNEMENTS.filter(ab=>!ab.id.startsWith("cdg"));
+            const communes = ABONNEMENTS.filter(ab=>!ab.id.startsWith("cdg") && !ab.affiliee);
+            const affiliee = ABONNEMENTS.find(ab=>ab.id==="commune_affiliee");
             const cdgs     = ABONNEMENTS.filter(ab=>ab.id.startsWith("cdg"));
             const renderCard = (ab) => {
               if (!ab) return <div key="empty" />;
@@ -656,9 +830,12 @@ function App() {
                 : "/mois";
               const isCdg = ab.id.startsWith("cdg");
               return (
-                <div key={ab.id} className="ab-card" style={{ borderColor:`${ab.color}${mairieVerifiee?"80":"30"}`, opacity:mairieVerifiee?1:0.45, display:"flex", flexDirection:"column" }}
-                  onMouseEnter={e=>{if(mairieVerifiee)e.currentTarget.style.borderColor=ab.color}}
-                  onMouseLeave={e=>e.currentTarget.style.borderColor=`${ab.color}${mairieVerifiee?"80":"30"}`}>
+                <div key={ab.id} className="ab-card" style={{ borderColor:`${ab.color}${mairieStatut?"80":"30"}`, opacity:mairieStatut?1:0.45, display:"flex", flexDirection:"column" }}
+                  onMouseEnter={e=>{if(mairieStatut)e.currentTarget.style.borderColor=ab.color}}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor=`${ab.color}${mairieStatut?"80":"30"}`}>
+                  {/* Badge + prix barré si tarif affiliée */}
+                  {ab.badge && <div style={{ background:`${ab.color}22`, color:ab.color, fontSize:10, fontWeight:700, padding:"3px 10px", borderRadius:20, display:"inline-block", marginBottom:6 }}>{ab.badge}</div>}
+                  {ab.prixRef && <div style={{ fontSize:11, color:"#4A6080", textDecoration:"line-through", marginBottom:2 }}>{ab.prixRef} €/mois (plein tarif)</div>}
                   {/* Prix */}
                   <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:38, fontWeight:800, color:ab.color, lineHeight:1 }}>{prixAff}€</div>
                   <div style={{ fontSize:11, color:"#64748B", marginBottom:12, lineHeight:1.4 }}>{suffixe}</div>
@@ -673,38 +850,63 @@ function App() {
                     {["Annonces gratuites","Alertes légales","Profils anonymisés"].map(f=>(
                       <div key={f} style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ {f}</div>
                     ))}
-                    {ab.id==="essentiel"  && <div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Alerte engagement de servir 10 877 €</div>}
-                    {ab.id==="premium"    && <><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Tableau de bord RH · Exports CSV</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Matching priorités légales</div></>}
+                    {ab.id==="essentiel"        && <div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Alerte engagement de servir 10 877 €</div>}
+                    {ab.id==="premium"          && <><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Tableau de bord RH · Exports CSV</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Matching priorités légales</div></>}
+                    {ab.id==="commune_affiliee" && <><div style={{ fontSize:11, color:ab.color, marginBottom:4, fontWeight:600 }}>✓ Interface autonome (sans passer par CDG)</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Déverrouillages mutualisés quota CDG</div></>}
                     {isCdg && <><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Vue consolidée département</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Matching priorités légales</div></>}
-                    {ab.id==="cdg_dept"   && <div style={{ fontSize:11, color:"#4ade80", marginBottom:4, fontWeight:600 }}>✓ {ab.desc}</div>}
-                    {ab.id==="cdg_region" && <><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Multi-départements · TB régional</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Accès API / intégration SIRH</div></>}
+                    {ab.id==="cdg_dept"         && <div style={{ fontSize:11, color:"#4ade80", marginBottom:4, fontWeight:600 }}>✓ {ab.desc}</div>}
+                    {ab.id==="cdg_region"       && <><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Multi-départements · TB régional</div><div style={{ fontSize:11, color:"#64748B", marginBottom:4 }}>✓ Accès API / intégration SIRH</div></>}
                   </div>
-                  {/* Bouton */}
-                  {/* Badge "Le plus choisi" juste au-dessus du bouton */}
                   {ab.id==="essentiel" && (
                     <div style={{ textAlign:"center", marginTop:14, marginBottom:6 }}>
                       <span style={{ background:`${ab.color}22`, color:ab.color, fontSize:11, fontWeight:700, padding:"4px 12px", borderRadius:20, display:"inline-block" }}>⭐ Le plus choisi</span>
                     </div>
                   )}
-                  <button style={{ ...S.btnP, width:"100%", marginTop: ab.id==="essentiel" ? 0 : 14, background:`linear-gradient(135deg,${ab.color},${ab.color}cc)`, fontSize:12, opacity:mairieVerifiee?1:0.4 }}
-                    onClick={()=>souscribreAbonnement(ab)} disabled={!mairieVerifiee}>
-                    {mairieVerifiee ? `Souscrire — ${prixAff} €${facturation==="annuel"?" / an":" / mois"}` : "🔒 Vérification requise"}
+                  <button style={{ ...S.btnP, width:"100%", marginTop: ab.id==="essentiel" ? 0 : 14, background:`linear-gradient(135deg,${ab.color},${ab.color}cc)`, fontSize:12, opacity:mairieStatut?1:0.4 }}
+                    onClick={()=>souscribreAbonnement(ab)} disabled={!mairieStatut}>
+                    {mairieStatut ? `Souscrire — ${prixAff} €${facturation==="annuel"?" / an":" / mois"}` : "🔒 Compte requis"}
                   </button>
                 </div>
               );
             };
 
             return (
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:14, marginBottom:36 }}>
-                {communes.map(ab => renderCard(ab))}
-                <div style={{ gridColumn:"1/-1", display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:14, marginTop:8 }}>
-                  <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>CENTRES DE GESTION (CDG)</div>
-                  <div />
-                  <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>CENTRES DE GESTION (CDG)</div>
+              <div>
+                {/* Ligne 1 — 3 plans communes standard */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:14, marginBottom:14 }}>
+                  {communes.map(ab => renderCard(ab))}
                 </div>
-                {renderCard(cdgs[0])}
-                <div />
-                {renderCard(cdgs[1])}
+
+                {/* Ligne 1bis — Commune affiliée CDG (encadrée en cyan) */}
+                <div style={{ border:"1px dashed #06B6D4", borderRadius:12, padding:"12px 16px", marginBottom:14 }}>
+                  <div style={{ fontSize:10, color:"#06B6D4", fontWeight:700, letterSpacing:"1px", marginBottom:10, textAlign:"center" }}>
+                    COMMUNE AFFILIÉE À UN CDG ABONNÉ — TARIF RÉDUIT −40 %
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1fr) 2fr", gap:14, alignItems:"start" }}>
+                    {renderCard(affiliee)}
+                    <div style={{ background:"#0A1220", borderRadius:10, padding:"14px 16px", fontSize:13, color:"#8FA3BB", lineHeight:1.7 }}>
+                      <div style={{ fontWeight:700, color:"#E2E8F0", marginBottom:8 }}>Pourquoi ce plan existe-t-il ?</div>
+                      <p style={{ marginBottom:10 }}>Si votre CDG est déjà abonné, vous pouvez accéder à PM•EMPLOI <em>via</em> lui gratuitement. Mais ce plan vous donne une <strong style={{ color:"#06B6D4" }}>interface 100 % autonome</strong> — sans dépendre du CDG comme intermédiaire — à tarif préférentiel.</p>
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                        {["Interface propre","Annonces en votre nom","Déverrouillages mutualisés CDG","Tableau de bord dédié"].map(f=>(
+                          <span key={f} style={{ background:"#06B6D422", color:"#06B6D4", fontSize:11, padding:"3px 8px", borderRadius:6, fontWeight:600 }}>✓ {f}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ligne 2 — CDG sous colonnes 1 et 3 */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:14, marginBottom:36 }}>
+                  <div style={{ gridColumn:"1/-1", display:"grid", gridTemplateColumns:"repeat(3,minmax(0,1fr))", gap:14, marginBottom:6 }}>
+                    <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>CENTRES DE GESTION (CDG)</div>
+                    <div />
+                    <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"1px", textAlign:"center" }}>CENTRES DE GESTION (CDG)</div>
+                  </div>
+                  {renderCard(cdgs[0])}
+                  <div />
+                  {renderCard(cdgs[1])}
+                </div>
               </div>
             );
           })()}
@@ -765,8 +967,27 @@ function App() {
               <p style={{ color:"#4A6080", fontSize:13, marginTop:4 }}>Votre espace agent PM — profil anonymisé sur la plateforme</p>
             </div>
             <div style={{ display:"flex", gap:8 }}>
-              <button style={{ ...S.btnP, fontSize:12 }} onClick={()=>setView("policiers")}>🔍 Voir les annonces</button>
-              <button style={{ ...S.btnG, fontSize:12 }} onClick={()=>{setRole("policier");setView("inscription")}}>✏️ Modifier mon profil</button>
+              <button style={{ ...S.btnP, fontSize:12 }} onClick={()=>setView("annonces")}>🔍 Voir les annonces</button>
+              <button style={{ ...S.btnG, fontSize:12 }} onClick={()=>{
+                // Bug 2 — pré-remplir newOfficer avec les données de l'agent connecté
+                if (userConnecte && userType === "pm" && userProfil) {
+                  setNewOfficer({
+                    nom: userProfil.nom || "", prenom: userProfil.prenom || "",
+                    grade: userProfil.grade || "Gardien", annees: String(userProfil.annees || ""),
+                    commune: userProfil.commune || "", typeEmployeur: userProfil.typeEmployeur || "Commune",
+                    origine: userProfil.origine || "Policier municipal en poste",
+                    statut: userProfil.statut || "titulaire",
+                    dateTitularisation: userProfil.dateTitularisation || "",
+                    engagementSigne: userProfil.engagementSigne || "Non",
+                    regions: userProfil.regions || [], specialites: userProfil.specialites || [],
+                    dispo: userProfil.dispo || "Immédiate", typeMobilite: userProfil.typeMobilite || "Mutation externe",
+                    prioriteLegale: userProfil.prioriteLegale || [],
+                    email: userProfil.contact?.split(" | ")[0] || "",
+                    tel: userProfil.contact?.split(" | ")[1] || "",
+                  });
+                }
+                setRole("policier"); setView("inscription");
+              }}>✏️ Modifier mon profil</button>
             </div>
           </div>
 
@@ -786,6 +1007,33 @@ function App() {
                   ? "✅ Votre profil est visible par toutes les mairies abonnées et les CDGs. Vous pouvez être contacté à tout moment."
                   : "💤 Profil masqué. Aucune mairie ne peut vous voir. Vous continuez de recevoir les alertes d'annonces."}
               </p>
+
+              {/* ── Règle 1 — Exclusion automatique employeur ── */}
+              <div style={{ borderTop:"1px solid #1A2E4A", marginTop:14, paddingTop:14 }}>
+                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:15, fontWeight:700, color:"#E2E8F0", marginBottom:8 }}>
+                  🔒 Visibilité employeur actuel
+                </div>
+                <div style={{ background: autorisationEmployeur ? "#052e16" : "#1c1006", border:`1px solid ${autorisationEmployeur?"#14532d":"#78350f"}`, borderRadius:8, padding:"10px 12px", marginBottom:10 }}>
+                  <div style={{ fontSize:12, color: autorisationEmployeur ? "#4ade80" : "#fbbf24", fontWeight:600, marginBottom:4 }}>
+                    {autorisationEmployeur
+                      ? "✅ Visibilité autorisée — votre CDG et commune peuvent voir votre profil"
+                      : "🔒 Protection active — votre commune et CDG ne peuvent pas vous voir"}
+                  </div>
+                  <div style={{ fontSize:11, color:"#64748B", lineHeight:1.5 }}>
+                    {autorisationEmployeur
+                      ? `Votre profil est visible par la commune de ${getDept(userProfil?.commune) ? `votre département (${getDept(userProfil?.commune)})` : "votre département"} et son CDG.`
+                      : "Par défaut, votre profil est masqué pour votre commune employeur et le CDG de votre département. Activez si vous cherchez à muter dans le même département."}
+                  </div>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer" }} onClick={()=>setAutorisationEmployeur(v=>!v)}>
+                  <div style={{ width:38, height:20, borderRadius:10, background:autorisationEmployeur?"#059669":"#1E3A5F", position:"relative", transition:"background .2s", flexShrink:0 }}>
+                    <div style={{ width:16, height:16, borderRadius:"50%", background:"white", position:"absolute", top:2, left:autorisationEmployeur?20:2, transition:"left .2s" }} />
+                  </div>
+                  <span style={{ fontSize:12, color:"#8FA3BB" }}>
+                    {autorisationEmployeur ? "Désactiver (re-masquer)" : "Autoriser mon CDG / commune à me voir"}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Récapitulatif profil */}
@@ -806,7 +1054,8 @@ function App() {
               ))}
               {(userProfil?.prioriteLegale||[]).length > 0 && (
                 <div style={{ marginTop:10, display:"flex", gap:6, flexWrap:"wrap" }}>
-                  {(userProfil.prioriteLegale||[]).map(p=>(<span key={p} style={S.chip("#1e3a5f","#93C5FD","#2D5A8E")}>{p==="conjoint"?"👨‍👩‍👧 Priorité légale":p==="rqth"?"♿ RQTH":"🤝 Proche aidant"}</span>))}
+                  {/* Dashboard PM = vue de l'agent sur son propre profil : détails complets autorisés */}
+                  {(userProfil.prioriteLegale||[]).map(p=>(<span key={p} style={S.chip("#1e3a5f","#93C5FD","#2D5A8E")}>{p==="conjoint"?"👨‍👩‍👧 Rapprochement conjoint":p==="rqth"?"♿ RQTH (donnée de santé — masquée aux mairies)":"🤝 Proche aidant"}</span>))}
                 </div>
               )}
             </div>
@@ -831,18 +1080,136 @@ function App() {
           <div style={{ marginTop:24 }}>
             <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:20, fontWeight:700, marginBottom:14 }}>📋 Annonces correspondant à votre profil</div>
             <div style={{ display:"grid", gap:10 }}>
-              {annonces.slice(0,3).map(a=>(
-                <div key={a.id} style={{ ...S.card, padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
-                  <div>
-                    <span style={{ fontWeight:700, color:"#E2E8F0", fontSize:14 }}>🏛️ {a.commune}</span>
-                    <span style={{ fontSize:12, color:"#4A6080", marginLeft:8 }}>{a.dept}</span>
-                    <div style={{ fontSize:12, color:"#8FA3BB", marginTop:4 }}>{a.grade} · {a.besoin} poste(s) · <strong style={{ color:"#E2E8F0" }}>{a.urgence}</strong></div>
+              {(() => {
+                // Bug 3 — filtrer les annonces par régions et grade de l'agent
+                const agentRegions = userProfil?.regions || [];
+                const agentCat     = GRADES_CAT[userProfil?.grade || ""] || null;
+                const annoncesMatch = annonces.filter(a => {
+                  const regionOk = agentRegions.length === 0 || agentRegions.includes(a.region);
+                  const gradeOk  = !agentCat || a.grade === "Tous grades"
+                    || (GRADES_CAT[a.grade] || "C") === agentCat;
+                  return regionOk || gradeOk; // OR : on inclut si au moins une correspondance
+                });
+                const aAfficher = (annoncesMatch.length > 0 ? annoncesMatch : annonces).slice(0,3);
+                return aAfficher.map(a=>(
+                  <div key={a.id} style={{ ...S.card, padding:"14px 18px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
+                    <div>
+                      <span style={{ fontWeight:700, color:"#E2E8F0", fontSize:14 }}>🏛️ {a.commune}</span>
+                      <span style={{ fontSize:12, color:"#4A6080", marginLeft:8 }}>{a.dept}</span>
+                      <div style={{ fontSize:12, color:"#8FA3BB", marginTop:4 }}>{a.grade} · {a.besoin} poste(s) · <strong style={{ color:"#E2E8F0" }}>{a.urgence}</strong></div>
+                    </div>
+                    {/* Bug 5 — pré-appliquer filtre région avant navigation */}
+                    <button style={{ ...S.btnP, fontSize:11 }} onClick={()=>{
+                      if (a.region && agentRegions.includes(a.region)) setFilterRegion(a.region);
+                      setView("annonces");
+                    }}>Voir →</button>
                   </div>
-                  <button style={{ ...S.btnP, fontSize:11 }} onClick={()=>setView("annonces")}>Voir →</button>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
+
           </div>
+
+          {/* ── Notifications de consentement ──────────────────── */}
+          {(() => {
+            const enAttente = demandesConsentement.filter(d => d.statut === "en_attente");
+            const historique = demandesConsentement.filter(d => d.statut !== "en_attente");
+            return (
+              <div style={{ marginTop:8 }}>
+                {/* Demandes en attente */}
+                {enAttente.length > 0 && (
+                  <div style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:20, fontWeight:700, marginBottom:12, color:"#fbbf24" }}>
+                      🔔 {enAttente.length} demande(s) d'accès en attente de votre réponse
+                    </div>
+                    {enAttente.map(d => {
+                      const officer = officers.find(o => o.id === d.officerId);
+                      const restant = tempsRestant(d.dateRequete);
+                      return (
+                        <div key={d.id} style={{ ...S.card, padding:"16px 20px", marginBottom:10, borderLeft:"3px solid #F59E0B" }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
+                            <div>
+                              <div style={{ fontWeight:700, fontSize:14, color:"#E2E8F0", marginBottom:4 }}>
+                                🏛️ {d.mairieNom} souhaite accéder à votre profil
+                              </div>
+                              <div style={{ fontSize:12, color:"#8FA3BB", marginBottom:4 }}>
+                                Profil concerné : <strong style={{ color:"#60A5FA" }}>{officer ? `${officer.grade} — ${officer.commune}` : `Profil #${d.officerId}`}</strong>
+                              </div>
+                              <div style={{ fontSize:11, color:"#4A6080" }}>
+                                Demandé le {new Date(d.dateRequete).toLocaleDateString("fr-FR")} à {new Date(d.dateRequete).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}
+                                {restant
+                                  ? <span style={{ color:"#fbbf24", marginLeft:8 }}>· Expire dans {restant}</span>
+                                  : <span style={{ color:"#EF4444", marginLeft:8 }}>· Délai expiré — refus tacite appliqué</span>}
+                              </div>
+                              <div style={{ marginTop:8, fontSize:11, color:"#64748B" }}>
+                                ℹ️ Si vous refusez, le crédit est restitué à la mairie. Si vous n'avez pas répondu sous {DELAI_H}h : <strong style={{ color: preferenceConsentement==="refus_tacite"?"#fca5a5":"#86efac" }}>
+                                  {preferenceConsentement==="refus_tacite" ? "refus automatique" : "acceptation automatique"}
+                                </strong>
+                              </div>
+                            </div>
+                            <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+                              <button style={S.btnOk} onClick={()=>repondreConsentement(d.id,"accepte")}>✅ Autoriser</button>
+                              <button style={S.btnErr} onClick={()=>repondreConsentement(d.id,"refuse")}>❌ Refuser</button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Historique des réponses */}
+                {historique.length > 0 && (
+                  <div style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, marginBottom:10, color:"#8FA3BB" }}>
+                      📜 Historique des accès à votre profil
+                    </div>
+                    <div style={{ ...S.card, padding:"4px 8px" }}>
+                      {historique.map(d=>(
+                        <div key={d.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"9px 12px", borderBottom:"1px solid #1A2E4A", fontSize:12 }}>
+                          <span style={{ color:"#8FA3BB" }}>🏛️ {d.mairieNom}</span>
+                          <span style={{ color:"#4A6080" }}>{new Date(d.dateRequete).toLocaleDateString("fr-FR")}</span>
+                          <span style={{
+                            ...S.chip(
+                              d.statut==="accepte"?"#052e16":d.statut==="refuse"?"#450a0a":"#1c1006",
+                              d.statut==="accepte"?"#4ade80":d.statut==="refuse"?"#fca5a5":"#fbbf24",
+                              d.statut==="accepte"?"#14532d":d.statut==="refuse"?"#7f1d1d":"#78350f"
+                            )
+                          }}>
+                            {d.statut==="accepte"?"✅ Autorisé":d.statut==="refuse"?"❌ Refusé":"⏱️ Expiré"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Préférence de réponse tacite */}
+                <div style={{ ...S.card, padding:"16px 20px", borderLeft:"3px solid #3B82F6" }}>
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:15, fontWeight:700, color:"#E2E8F0", marginBottom:10 }}>
+                    ⚙️ Comportement si pas de réponse sous {DELAI_H}h
+                  </div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    {[["refus_tacite","🔒 Refus automatique (recommandé)","#450a0a","#fca5a5","#7f1d1d"],
+                      ["acceptation_tacite","✅ Acceptation automatique","#052e16","#4ade80","#14532d"]].map(([val,label,bg,color,border])=>(
+                      <button key={val} onClick={()=>setPreferenceConsentement(val)}
+                        style={{ padding:"9px 16px", borderRadius:8, border:`1px solid ${preferenceConsentement===val?border:"#1E3A5F"}`,
+                          background:preferenceConsentement===val?bg:"#0A1628",
+                          color:preferenceConsentement===val?color:"#64748B",
+                          cursor:"pointer", fontFamily:"Barlow,sans-serif", fontWeight:600, fontSize:12 }}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p style={{ fontSize:11, color:"#4A6080", marginTop:8, lineHeight:1.5 }}>
+                    {preferenceConsentement==="refus_tacite"
+                      ? "🔒 Si vous ne répondez pas dans les 72h, l'accès est automatiquement refusé et le crédit restitué à la mairie. Votre anonymat est préservé même en cas d'inaction."
+                      : "✅ Si vous ne répondez pas dans les 72h, l'accès est accordé automatiquement. Pratique si vous êtes souvent indisponible mais que vous souhaitez maximiser vos chances de contact."}
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
         </div>}
 
         {/* ══ DASHBOARD MAIRIE ════════════════════════════════════ */}
@@ -861,64 +1228,151 @@ function App() {
           </div>
 
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:16, marginBottom:24 }}>
-            {/* Abonnement */}
-            <div style={{ ...S.card, padding:20, borderLeft:"3px solid #F59E0B" }}>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:14 }}>💳 Mon abonnement</div>
-              {abonnement ? (<>
-                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:32, fontWeight:800, color:"#F59E0B" }}>{abonnement.label}</div>
-                <div style={{ fontSize:12, color:"#64748B", marginBottom:12 }}>{abonnement.prix} €/mois · renouvellement automatique</div>
-                <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #1A2E4A", fontSize:13 }}>
-                  <span style={{ color:"#4A6080" }}>Contacts restants ce mois</span>
-                  <span style={{ color:contactsRestants>0?"#4ade80":"#EF4444", fontWeight:700 }}>{abonnement.illimite?"illimité":contactsRestants}</span>
+
+            {/* ── BLOC ABONNEMENT — conditionné par rattachementCDG (Point 5) ── */}
+            {(() => {
+              const rCDG = userProfil?.rattachementCDG; // null | "couvert" | "non_abonne"
+              // Scénario B — couverte par CDG abonné → pas d'abonnement propre nécessaire
+              if (rCDG === "couvert" && !abonnement) return (
+                <div style={{ ...S.card, padding:20, borderLeft:"3px solid #06B6D4" }}>
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:12 }}>🔵 Accès via CDG</div>
+                  <div style={{ background:"#0A1220", border:"1px solid #06B6D4", borderRadius:8, padding:12, marginBottom:12 }}>
+                    <div style={{ color:"#06B6D4", fontWeight:700, fontSize:14, marginBottom:4 }}>✅ Couvert par {userProfil?.nomCDG}</div>
+                    <div style={{ fontSize:12, color:"#8FA3BB" }}>Votre CDG est abonné — vous bénéficiez de l'accès à PM•EMPLOI sans abonnement propre.</div>
+                    <div style={{ fontSize:12, color:"#8FA3BB", marginTop:6 }}>Contact CDG : <span style={{ color:"#06B6D4" }}>{userProfil?.emailCDG}</span></div>
+                  </div>
+                  {/* Point 6 — Note guide */}
+                  <div style={{ background:"#0A1628", border:"1px dashed #1E3A5F", borderRadius:8, padding:10, marginBottom:12, fontSize:11, color:"#4A6080", lineHeight:1.6 }}>
+                    📌 Votre accès est activé automatiquement dès que votre CDG valide votre licence. Pour toute question sur votre rattachement CDG, contactez <span style={{ color:"#06B6D4" }}>{userProfil?.emailCDG}</span>.
+                  </div>
+                  {/* Scénario C — option upgrade si CDG couvert + veut autonomie */}
+                  <div style={{ fontSize:12, color:"#4A6080", marginBottom:8 }}>Souhaitez-vous une interface autonome sans passer par votre CDG ?</div>
+                  <button style={{ ...S.btnG, width:"100%", fontSize:12, borderColor:"#06B6D4", color:"#06B6D4" }} onClick={()=>setModal({type:"abonnement"})}>
+                    💡 Option autonomie — plan Commune affiliée (29 €/mois)
+                  </button>
                 </div>
-                <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", fontSize:13 }}>
-                  <span style={{ color:"#4A6080" }}>Renouvellement</span>
-                  <span style={{ color:"#E2E8F0" }}>1er du mois</span>
+              );
+              // Scénario A & D — abonnement direct (sans CDG ou CDG non abonné)
+              return (
+                <div style={{ ...S.card, padding:20, borderLeft:"3px solid #F59E0B" }}>
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:14 }}>💳 Mon abonnement</div>
+                  {rCDG === "non_abonne" && (
+                    <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#fbbf24" }}>
+                      ℹ️ Votre CDG n'est pas abonné à PM•EMPLOI. Vous gérez votre accès en direct.
+                    </div>
+                  )}
+                  {abonnement ? (<>
+                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:32, fontWeight:800, color:"#F59E0B" }}>{abonnement.label}</div>
+                    <div style={{ fontSize:12, color:"#64748B", marginBottom:12 }}>{abonnement.prix} €/mois · renouvellement automatique</div>
+                    <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #1A2E4A", fontSize:13 }}>
+                      <span style={{ color:"#4A6080" }}>Contacts restants ce mois</span>
+                      <span style={{ color:contactsRestants>0?"#4ade80":"#EF4444", fontWeight:700 }}>{abonnement.illimite?"illimité":contactsRestants}</span>
+                    </div>
+                    <div style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", fontSize:13 }}>
+                      <span style={{ color:"#4A6080" }}>Renouvellement</span>
+                      <span style={{ color:"#E2E8F0" }}>1er du mois</span>
+                    </div>
+                    <button style={{ ...S.btnG, width:"100%", marginTop:12, fontSize:12 }} onClick={()=>setModal({type:"abonnement"})}>Changer de plan</button>
+                  </>) : (
+                    <div>
+                      <p style={{ fontSize:13, color:"#64748B", marginBottom:14 }}>Aucun abonnement actif. Souscrivez pour accéder aux profils PM.</p>
+                      <button style={{ ...S.btnP, width:"100%", fontSize:13 }} onClick={()=>setModal({type:"abonnement"})}>Choisir un abonnement</button>
+                    </div>
+                  )}
                 </div>
-                <button style={{ ...S.btnG, width:"100%", marginTop:12, fontSize:12 }} onClick={()=>setModal({type:"abonnement"})}>Changer de plan</button>
-              </>) : (
-                <div>
-                  <p style={{ fontSize:13, color:"#64748B", marginBottom:14 }}>Aucun abonnement actif. Souscrivez pour accéder aux profils PM.</p>
-                  <button style={{ ...S.btnP, width:"100%", fontSize:13 }} onClick={()=>setModal({type:"abonnement"})}>Choisir un abonnement</button>
-                </div>
-              )}
-            </div>
+              );
+            })()}
 
             {/* Vérification */}
-            <div style={{ ...S.card, padding:20, borderLeft:`3px solid ${mairieVerifiee?"#22c55e":"#F59E0B"}` }}>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:14 }}>🔐 Statut vérification</div>
-              {mairieVerifiee ? (
+            <div style={{ ...S.card, padding:20, borderLeft:`3px solid ${mairieStatut==="verifie"?"#22c55e":mairieStatut==="compte"?"#F59E0B":"#EF4444"}` }}>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:14 }}>🔐 Statut compte</div>
+              {mairieStatut==="verifie" ? (
                 <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:12 }}>
-                  <div style={{ color:"#4ade80", fontWeight:700, fontSize:14, marginBottom:6 }}>✅ Collectivité vérifiée</div>
+                  <div style={{ color:"#4ade80", fontWeight:700, fontSize:14, marginBottom:6 }}>✅ Collectivité vérifiée — accès complet</div>
                   <div style={{ fontSize:12, color:"#86efac" }}>SIRET : {userProfil?.siret}</div>
                   <div style={{ fontSize:12, color:"#86efac" }}>Gestionnaire : {userProfil?.nomContact}</div>
                   <div style={{ fontSize:12, color:"#86efac" }}>Fonction : {userProfil?.fonction}</div>
                 </div>
+              ) : mairieStatut==="compte" ? (
+                <div>
+                  <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:8, padding:12, marginBottom:10 }}>
+                    <div style={{ color:"#fbbf24", fontWeight:700, fontSize:14, marginBottom:4 }}>⏳ Vérification en attente — 48h</div>
+                    <p style={{ fontSize:12, color:"#92400e" }}>Dossier en cours d'examen. Vous pouvez déjà publier des annonces.</p>
+                  </div>
+                  <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:12 }}>
+                    <div style={{ color:"#4ade80", fontWeight:700, fontSize:13, marginBottom:4 }}>✅ Disponible dès maintenant</div>
+                    <div style={{ fontSize:12, color:"#86efac" }}>• Publier des annonces visibles par les agents PM</div>
+                    <div style={{ fontSize:12, color:"#86efac" }}>• Recevoir des candidatures spontanées</div>
+                  </div>
+                  <button style={{ ...S.btnP, width:"100%", marginTop:10, fontSize:12 }} onClick={()=>setModal({type:"abonnement"})}>Souscrire pour accéder aux profils →</button>
+                </div>
               ) : (
-                <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:8, padding:12 }}>
-                  <div style={{ color:"#fbbf24", fontWeight:700, fontSize:14, marginBottom:6 }}>⏳ Vérification en attente</div>
-                  <p style={{ fontSize:12, color:"#92400e" }}>Votre dossier est en cours d'examen. Réponse sous 48h ouvrées.</p>
+                <div style={{ background:"#450a0a", border:"1px solid #7f1d1d", borderRadius:8, padding:12 }}>
+                  <div style={{ color:"#fca5a5", fontWeight:700, fontSize:14, marginBottom:4 }}>❌ Pas de compte actif</div>
+                  <p style={{ fontSize:12, color:"#7f1d1d" }}>Créez un compte pour accéder à la plateforme.</p>
                 </div>
               )}
             </div>
 
-            {/* Actions rapides */}
+            {/* Point 4 — Actions rapides sans doublon : 3 actions utiles */}
             <div style={{ ...S.card, padding:20 }}>
               <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:14 }}>⚡ Actions rapides</div>
               {[
-                { icon:"👮", label:"Voir profils PM disponibles", action:()=>setView("policiers") },
-                { icon:"📋", label:"Publier une annonce", action:()=>{setRole("mairie");setView("inscription")} },
-                { icon:"💳", label:"Gérer mon abonnement", action:()=>setView("tarifs") },
+                { icon:"👮", label:"Voir les profils PM",           action:()=>naviguer("policiers") },
+                // Point 3 — vérifie mairieStatut avant de rediriger
+                { icon:"📋", label:"Publier une annonce",           action:()=>{ setRole("mairie"); naviguer("inscription"); } },
+                { icon:"📊", label:"Exporter mes contacts (CSV)",   action:()=>notify("Export CSV disponible en production — fonctionnalité Stripe & backend.") },
+                { icon:"📬", label:"Mes candidatures reçues",       action:()=>notify("Vos candidatures s'afficheront ici une fois des agents positulés.") },
+                { icon:"⚖️", label:"Simuler l'engagement de servir",action:()=>setModal({type:"simulation_engagement"}) },
               ].map(({icon,label,action})=>(
-                <div key={label} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom:"1px solid #1A2E4A", cursor:"pointer" }} onClick={action}
+                <div key={label} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0", borderBottom:"1px solid #1A2E4A", cursor:"pointer" }} onClick={action}
                   onMouseEnter={e=>e.currentTarget.style.paddingLeft="6px"} onMouseLeave={e=>e.currentTarget.style.paddingLeft="0"}>
-                  <span style={{ fontSize:18 }}>{icon}</span>
+                  <span style={{ fontSize:16 }}>{icon}</span>
                   <span style={{ fontSize:13, color:"#8FA3BB" }}>{label}</span>
                   <span style={{ marginLeft:"auto", color:"#2D5A8E" }}>→</span>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* Suivi des demandes de consentement */}
+          {(() => {
+            const mesDemandesEnAttente = demandesConsentement.filter(d => d.statut === "en_attente");
+            const mesDemandesAcceptees = demandesConsentement.filter(d => d.statut === "accepte");
+            if (demandesConsentement.length === 0) return null;
+            return (
+              <div style={{ ...S.card, padding:"16px 20px", borderLeft:"3px solid #3B82F6" }}>
+                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:16, fontWeight:700, color:"#E2E8F0", marginBottom:12 }}>
+                  📬 Suivi des demandes d'accès
+                </div>
+                {demandesConsentement.map(d => {
+                  const officer = officers.find(o => o.id === d.officerId);
+                  const restant = tempsRestant(d.dateRequete);
+                  const statusConfig = {
+                    en_attente:{ bg:"#1c1006", color:"#fbbf24", border:"#78350f", label:`⏳ En attente — ${restant ? `expire dans ${restant}` : "délai expiré"}` },
+                    accepte:   { bg:"#052e16", color:"#4ade80", border:"#14532d", label:"✅ Accepté — coordonnées visibles" },
+                    refuse:    { bg:"#450a0a", color:"#fca5a5", border:"#7f1d1d", label:"❌ Refusé — crédit restitué" },
+                    expire:    { bg:"#0A1628", color:"#64748B", border:"#1E3A5F", label:"⏱️ Expiré — refus tacite" },
+                  }[d.statut] || {};
+                  return (
+                    <div key={d.id} style={{ background:statusConfig.bg, border:`1px solid ${statusConfig.border}`, borderRadius:8, padding:"9px 12px", marginBottom:8 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:10 }}>
+                        <div>
+                          <div style={{ fontSize:12, color:"#E2E8F0", fontWeight:600 }}>
+                            {officer ? `${officer.grade} — ${(officer.commune||"").replace(/\s*\(\d+\)/,"")} (anonymisé)` : `Profil #${d.officerId}`}
+                          </div>
+                          <div style={{ fontSize:11, color:"#4A6080", marginTop:2 }}>
+                            Demande du {new Date(d.dateRequete).toLocaleDateString("fr-FR")}
+                          </div>
+                        </div>
+                        <span style={{ fontSize:11, color:statusConfig.color, fontWeight:600, flexShrink:0 }}>{statusConfig.label}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Alerte légale */}
           <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:10, padding:"12px 18px", fontSize:13, color:"#8FA3BB" }}>
@@ -939,59 +1393,150 @@ function App() {
           </div>
 
           {/* KPIs */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12, marginBottom:24 }}>
-            {[
-              ["🛡️", officers.filter(o=>(o.regions||[]).includes("Occitanie")).length, "Profils PM Occitanie"],
-              ["🏛️", (userProfil?.communesActives||[]).length, "Communes actives"],
-              ["🔑", userProfil?.licencesIncluses, "Licences incluses"],
-              ["📋", annonces.filter(a=>a.region==="Occitanie").length, "Annonces dpt."],
-            ].map(([icon,val,lab])=>(
-              <div key={lab} style={{ background:"linear-gradient(135deg,#0D1A2E,#0A1628)", border:"1px solid #1A2E4A", borderRadius:12, padding:16, textAlign:"center" }}>
-                <div style={{ fontSize:20, marginBottom:4 }}>{icon}</div>
-                <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, color:"#c084fc" }}>{val}</div>
-                <div style={{ fontSize:11, color:"#4A6080", marginTop:2 }}>{lab}</div>
+          {(() => {
+            const stats = userProfil?.statsUsage || {};
+            const totalContacts = Object.values(stats).reduce((s,v)=>s+(v.contacts||0),0);
+            const totalAnnonces = Object.values(stats).reduce((s,v)=>s+(v.annonces||0),0);
+            const inactives = (userProfil?.communesAffiliees||[]).filter(c=>!stats[c]||stats[c].contacts===0&&stats[c].annonces===0).length;
+            return (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12, marginBottom:24 }}>
+                {[
+                  ["🛡️", officers.filter(o=>(o.regions||[]).includes("Occitanie")).length, "Profils PM Occitanie"],
+                  ["🏛️", cdgLicences.size, "Communes actives"],
+                  ["🔓", totalContacts, "Contacts déverrouillés"],
+                  ["📋", totalAnnonces, "Annonces publiées"],
+                  ["⚠️", inactives, "Communes inactives"],
+                ].map(([icon,val,lab])=>(
+                  <div key={lab} style={{ background:"linear-gradient(135deg,#0D1A2E,#0A1628)", border:"1px solid #1A2E4A", borderRadius:12, padding:16, textAlign:"center" }}>
+                    <div style={{ fontSize:20, marginBottom:4 }}>{icon}</div>
+                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:28, fontWeight:800, color: lab==="Communes inactives"&&val>0?"#fbbf24":"#c084fc" }}>{val}</div>
+                    <div style={{ fontSize:11, color:"#4A6080", marginTop:2 }}>{lab}</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
-            {/* Communes affiliées + licences */}
-            <div style={{ ...S.card, padding:20 }}>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:14 }}>
-                🔑 Licences communes — modèle siège + licences
+          {/* ── Liste communes pleine largeur : licences + abonnement propre + stats ── */}
+          <div style={{ ...S.card, padding:20, marginBottom:20 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0" }}>
+                🏛️ Toutes mes communes affiliées
               </div>
-              <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"8px 12px", marginBottom:12, fontSize:12, color:"#8FA3BB" }}>
-                Plan siège CDG Département — <strong style={{ color:"#c084fc" }}>399 €/mois</strong> · 5 licences incluses · +29 €/commune supplémentaire
-              </div>
-              {(userProfil?.communesAffiliees||[]).map(c => {
-                const active = (userProfil?.communesActives||[]).includes(c);
+              {/* Récapitulatif facturation inline */}
+              {(() => {
+                const nbActives  = cdgLicences.size;
+                const nbIncluses = userProfil?.licencesIncluses || 5;
+                const nbSup      = Math.max(0, nbActives - nbIncluses);
+                const total      = 399 + nbSup * 29;
                 return (
-                  <div key={c} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:"1px solid #1A2E4A" }}>
-                    <span style={{ fontSize:13, color:active?"#E2E8F0":"#4A6080" }}>🏛️ {c}</span>
-                    {active
-                      ? <span style={S.chip("#052e16","#4ade80","#14532d")}>✅ Licence active</span>
-                      : <span style={{ ...S.chip("#0A1628","#4A6080","#1E3A5F"), fontSize:10 }}>— Sans licence</span>
-                    }
+                  <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+                    <span style={{ fontSize:12, color:"#8FA3BB" }}>💳 Facture mensuelle :</span>
+                    <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:800, color:"#c084fc" }}>{total} €/mois</span>
+                    {nbSup > 0 && <span style={{ fontSize:11, color:"#fbbf24" }}>({nbSup} sup. × 29 €)</span>}
                   </div>
                 );
-              })}
-              <div style={{ marginTop:12, fontSize:11, color:"#4A6080" }}>
-                {(userProfil?.communesActives||[]).length} licences actives sur {(userProfil?.communesAffiliees||[]).length} communes affiliées
-              </div>
+              })()}
             </div>
 
-            {/* Profils PM du département */}
-            <div style={{ ...S.card, padding:20 }}>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0", marginBottom:14 }}>
+            {/* En-tête colonnes */}
+            <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 80px 80px 90px", gap:8, padding:"6px 8px", fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"0.8px", borderBottom:"1px solid #1A2E4A", marginBottom:4 }}>
+              <span>COMMUNE</span>
+              <span style={{ textAlign:"center" }}>LICENCE CDG</span>
+              <span style={{ textAlign:"center" }}>ABONNEMENT PROPRE</span>
+              <span style={{ textAlign:"center" }}>CONTACTS</span>
+              <span style={{ textAlign:"center" }}>ANNONCES</span>
+              <span style={{ textAlign:"center" }}>ACTIVITÉ</span>
+            </div>
+
+            {/* Lignes communes */}
+            {(userProfil?.communesAffiliees||[]).map(c => {
+              const active        = cdgLicences.has(c);
+              const aPropre       = (userProfil?.communesAbonneesPropre||[]).includes(c);
+              const stats         = (userProfil?.statsUsage||{})[c] || { contacts:0, annonces:0, derniereActivite:"Jamais" };
+              const nbIncluses    = userProfil?.licencesIncluses || 5;
+              const inactive      = stats.contacts === 0 && stats.annonces === 0;
+              return (
+                <div key={c} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 80px 80px 90px", gap:8, padding:"10px 8px", borderBottom:"1px solid #1A2E4A", alignItems:"center" }}
+                  onMouseEnter={e=>e.currentTarget.style.background="#0A1220"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+
+                  {/* Col 1 — Nom commune */}
+                  <div>
+                    <span style={{ fontSize:13, color:active||aPropre?"#E2E8F0":"#4A6080", fontWeight:active||aPropre?600:400 }}>🏛️ {c}</span>
+                    {inactive && (active||aPropre) && <span style={{ fontSize:10, color:"#fbbf24", marginLeft:6 }}>⚠️ Inactif</span>}
+                  </div>
+
+                  {/* Col 2 — Licence CDG : bouton activer/désactiver */}
+                  <div style={{ textAlign:"center" }}>
+                    {active ? (
+                      <button onClick={()=>{ setCdgLicences(prev=>{ const n=new Set(prev); n.delete(c); return n; }); notify(`Licence ${c} désactivée.`,"error"); }}
+                        style={{ fontSize:10, padding:"3px 8px", borderRadius:5, border:"1px solid #7f1d1d", background:"#450a0a", color:"#fca5a5", cursor:"pointer", fontFamily:"Barlow,sans-serif", fontWeight:600 }}>
+                        ✅ Active · Désactiver
+                      </button>
+                    ) : (
+                      <button onClick={()=>{ setCdgLicences(prev=>new Set([...prev,c])); notify(`✅ Licence activée pour ${c}.`); }}
+                        style={{ fontSize:10, padding:"3px 8px", borderRadius:5, border:"1px solid #14532d", background:"#052e16", color:"#4ade80", cursor:"pointer", fontFamily:"Barlow,sans-serif", fontWeight:600 }}>
+                        Activer {cdgLicences.size < nbIncluses ? "(incluse)" : "(+29 €)"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Col 3 — F2 : abonnement propre */}
+                  <div style={{ textAlign:"center" }}>
+                    {aPropre
+                      ? <span style={{ fontSize:10, background:"#1e3a5f", color:"#60A5FA", padding:"2px 7px", borderRadius:5, fontWeight:700 }}>🔵 Autonome</span>
+                      : <span style={{ fontSize:10, color:"#2D4A6A" }}>—</span>
+                    }
+                  </div>
+
+                  {/* Col 4 — F3 : contacts déverrouillés */}
+                  <div style={{ textAlign:"center" }}>
+                    <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:700, color: stats.contacts > 0 ? "#4ade80" : "#2D4A6A" }}>
+                      {stats.contacts}
+                    </span>
+                  </div>
+
+                  {/* Col 5 — F3 : annonces publiées */}
+                  <div style={{ textAlign:"center" }}>
+                    <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:700, color: stats.annonces > 0 ? "#60A5FA" : "#2D4A6A" }}>
+                      {stats.annonces}
+                    </span>
+                  </div>
+
+                  {/* Col 6 — F3 : dernière activité */}
+                  <div style={{ textAlign:"center" }}>
+                    <span style={{ fontSize:10, color: stats.derniereActivite==="Jamais"?"#EF4444":stats.derniereActivite==="aujourd'hui"?"#4ade80":"#8FA3BB" }}>
+                      {stats.derniereActivite}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Légende */}
+            <div style={{ display:"flex", gap:16, marginTop:12, flexWrap:"wrap", fontSize:11, color:"#4A6080" }}>
+              <span>🔵 Autonome = commune ayant souscrit son propre abonnement</span>
+              <span>⚠️ Inactif = aucune utilisation ce mois</span>
+              <span>Contacts / Annonces = cumul du mois en cours</span>
+            </div>
+          </div>
+
+          {/* Profils PM disponibles — Occitanie */}
+          <div style={{ ...S.card, padding:20, marginBottom:20 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0" }}>
                 👮 Profils PM disponibles — Occitanie
               </div>
-              <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+              <div style={{ display:"flex", gap:8 }}>
                 {["Cat. C","Cat. B","Cat. A"].map(c=>(
                   <span key={c} style={{ ...S.chip("#0A1628","#8FA3BB","#1E3A5F"), cursor:"default" }}>
                     {c} : {officers.filter(o=>(o.regions||[]).includes("Occitanie") && (GRADES_CAT[o.grade]||"C")===c.split(" ")[1]).length}
                   </span>
                 ))}
               </div>
+            </div>
+            <div style={{ display:"grid", gap:6 }}>
               {officers.filter(o=>(o.regions||[]).includes("Occitanie")).slice(0,4).map(o=>{
                 const {display,initiales} = anonymize(o.prenom,o.nom);
                 const db = dispoBadge(o.dispo);
@@ -1006,8 +1551,8 @@ function App() {
                   </div>
                 );
               })}
-              <button style={{ ...S.btnP, width:"100%", marginTop:12, fontSize:12 }} onClick={()=>setView("policiers")}>Voir tous les profils →</button>
             </div>
+            <button style={{ ...S.btnP, width:"100%", marginTop:12, fontSize:12 }} onClick={()=>naviguer("policiers")}>Voir tous les profils →</button>
           </div>
         </div>}
 
@@ -1016,75 +1561,269 @@ function App() {
           {!adminOk ? (
             <div style={{ maxWidth:380, margin:"60px auto", textAlign:"center" }}>
               <div style={{ fontSize:46, marginBottom:16 }}>⚙️</div>
-              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:8 }}>Administration</div>
+              <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:8 }}>Administration PM•EMPLOI</div>
               <p style={{ color:"#4A6080", fontSize:14, marginBottom:22 }}>Espace réservé à l'équipe PM•EMPLOI</p>
               <input type="password" placeholder="Code administrateur" value={adminPin} onChange={e=>setAdminPin(e.target.value)} style={{ textAlign:"center", marginBottom:12, fontSize:16, letterSpacing:"4px" }}
                 onKeyDown={e=>{if(e.key==="Enter"){if(adminPin==="admin2026")setAdminOk(true);else notify("Code incorrect","error")}}} />
               <button style={{ ...S.btnP, width:"100%" }} onClick={()=>{if(adminPin==="admin2026")setAdminOk(true);else notify("Code incorrect","error")}}>Accéder</button>
               <p style={{ fontSize:11, color:"#2D4A6A", marginTop:10 }}>Code démo : admin2026</p>
             </div>
-          ) : (
+          ) : (() => {
+            // ── Données calculées backoffice ─────────────────────────────────
+            const mairiesValidees  = demandes.filter(d=>d.statut==="validee").length;
+            const mairiesAttente   = demandes.filter(d=>d.statut==="en_attente").length;
+            const agentsActifs     = officers.filter(o=>o.statut==="titulaire").length;
+            const agentsVeille     = 1; // mock
+            const mrr              = 49*1 + 399*1; // mairie Sète essentiel + CDG34
+            const mrrProj12        = 5400; // scénario central
+            const tauxConversion   = 62; // % mock
+            // Onglet admin actif
+            const [ongletAdmin, setOngletAdmin] = [adminOnglet, setAdminOnglet];
+
+            return (
             <div>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24, flexWrap:"wrap", gap:12 }}>
+              {/* En-tête */}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 }}>
                 <div>
-                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800 }}>Backoffice — Vérification des Mairies</div>
-                  {enAttente > 0 && <p style={{ color:"#F59E0B", fontSize:14, marginTop:4 }}>⚠️ {enAttente} dossier(s) en attente</p>}
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800 }}>⚙️ Backoffice PM•EMPLOI</div>
+                  <p style={{ color:"#4A6080", fontSize:13, marginTop:2 }}>Tableau de bord — Avril 2026</p>
                 </div>
-                <div style={{ display:"flex", gap:10 }}>
-                  {[["Toutes",demandes.length],["En attente",enAttente],["Validées",demandes.filter(d=>d.statut==="validee").length],["Rejetées",demandes.filter(d=>d.statut==="rejetee").length]].map(([l,n])=>(
-                    <div key={l} style={{ background:"#0D1A2E", border:"1px solid #1A2E4A", borderRadius:8, padding:"5px 12px", fontSize:12, color:"#8FA3BB" }}>{l} <strong style={{ color:"#E2E8F0" }}>{n}</strong></div>
-                  ))}
+                <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                  {mairiesAttente > 0 && <div style={{ background:"#450a0a", border:"1px solid #7f1d1d", borderRadius:8, padding:"6px 12px", fontSize:12, color:"#fca5a5" }}>⚠️ {mairiesAttente} dossier(s) en attente</div>}
+                  <button style={{ ...S.btnErr, fontSize:12 }} onClick={()=>{ setAdminOk(false); setAdminPin(""); }}>Déconnexion admin</button>
                 </div>
               </div>
-              <div style={{ display:"grid", gap:14 }}>
-                {demandes.map(d => {
-                  const bs = statutBadge(d.statut);
-                  const alertes = [];
-                  if (isBadEmail(d.email)) alertes.push("Email non institutionnel");
-                  if (!d.justificatif) alertes.push("Justificatif manquant");
-                  if ((d.siret||"").length !== 14) alertes.push("SIRET invalide");
-                  if (!d.fonction) alertes.push("Fonction non renseignée");
-                  return (
-                    <div key={d.id} style={{ ...S.card, padding:"18px 22px", borderLeft:`3px solid ${d.statut==="validee"?"#22c55e":d.statut==="rejetee"?"#EF4444":"#F59E0B"}` }}>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:16, alignItems:"start" }}>
-                        <div>
-                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10, flexWrap:"wrap" }}>
-                            <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:19, fontWeight:700, color:"#E2E8F0" }}>🏛️ {d.commune}</span>
-                            <span style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>{d.dept}</span>
-                            <span style={S.chip("#0A1628","#60A5FA","#1E3A5F")}>{d.typeEmployeur}</span>
-                            <span style={S.chip(bs.bg, bs.color, bs.border)}>{bs.label}</span>
+
+              {/* ── KPIs business ──────────────────────────────────────── */}
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12, marginBottom:24 }}>
+                {[
+                  { icon:"💰", val:`${mrr} €`, label:"MRR actuel", color:"#4ade80",  sub:"mensuel récurrent" },
+                  { icon:"📈", val:`${mrrProj12.toLocaleString("fr-FR")} €`, label:"MRR proj. M+12", color:"#60A5FA", sub:"scénario central" },
+                  { icon:"🛡️", val:officers.length, label:"Agents inscrits", color:"#c084fc", sub:`${agentsActifs} actifs · ${agentsVeille} en veille` },
+                  { icon:"🏛️", val:demandes.filter(d=>d.statut==="validee").length, label:"Mairies vérifiées", color:"#F59E0B", sub:`${mairiesAttente} en attente` },
+                  { icon:"🗺️", val:"1", label:"CDGs abonnés", color:"#8B5CF6", sub:"CDG Hérault 34" },
+                  { icon:"🔓", val:demandesConsentement.filter(d=>d.statut==="accepte").length, label:"Contacts déverrouillés", color:"#10B981", sub:"ce mois" },
+                  { icon:"⚡", val:`${tauxConversion}%`, label:"Taux conversion", color:"#fbbf24", sub:"gratuit → payant" },
+                  { icon:"📋", val:annonces.length, label:"Annonces actives", color:"#64748B", sub:"toutes régions" },
+                ].map(({icon,val,label,color,sub})=>(
+                  <div key={label} style={{ background:"linear-gradient(135deg,#0D1A2E,#0A1628)", border:"1px solid #1A2E4A", borderRadius:12, padding:"14px 16px" }}>
+                    <div style={{ fontSize:18, marginBottom:4 }}>{icon}</div>
+                    <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, color, lineHeight:1 }}>{val}</div>
+                    <div style={{ fontSize:11, color:"#E2E8F0", fontWeight:600, marginTop:4 }}>{label}</div>
+                    <div style={{ fontSize:10, color:"#4A6080", marginTop:2 }}>{sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Onglets ───────────────────────────────────────────── */}
+              <div style={{ display:"flex", gap:2, marginBottom:20, borderBottom:"1px solid #1A2E4A", paddingBottom:0 }}>
+                {[
+                  ["mairies",  "🏛️ Vérification mairies", mairiesAttente],
+                  ["agents",   "👮 Agents inscrits",       0],
+                  ["annonces", "📋 Modération annonces",   0],
+                  ["abonnements","💳 Abonnements",         0],
+                ].map(([id,label,badge])=>(
+                  <div key={id} onClick={()=>setAdminOnglet(id)}
+                    style={{ padding:"10px 16px", cursor:"pointer", fontSize:13, fontWeight:600, position:"relative",
+                      color:ongletAdmin===id?"#60A5FA":"#8FA3BB",
+                      borderBottom:ongletAdmin===id?"2px solid #3B82F6":"2px solid transparent",
+                      marginBottom:-1 }}>
+                    {label}
+                    {badge>0 && <span style={{ position:"absolute", top:4, right:4, width:16, height:16, background:"#EF4444", borderRadius:"50%", fontSize:9, color:"white", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700 }}>{badge}</span>}
+                  </div>
+                ))}
+              </div>
+
+              {/* ── ONGLET 1 : Vérification mairies ───────────────────── */}
+              {ongletAdmin==="mairies" && <div>
+                <div style={{ display:"flex", gap:10, marginBottom:16, flexWrap:"wrap" }}>
+                  {[["Toutes",demandes.length],["En attente",mairiesAttente],["Validées",mairiesValidees],["Rejetées",demandes.filter(d=>d.statut==="rejetee").length]].map(([l,n])=>(
+                    <div key={l} style={{ background:"#0D1A2E", border:"1px solid #1A2E4A", borderRadius:8, padding:"5px 14px", fontSize:12, color:"#8FA3BB" }}>{l} <strong style={{ color:"#E2E8F0" }}>{n}</strong></div>
+                  ))}
+                </div>
+                <div style={{ display:"grid", gap:12 }}>
+                  {demandes.map(d => {
+                    const bs = statutBadge(d.statut);
+                    const alertes = [];
+                    if (isBadEmail(d.email)) alertes.push("Email non institutionnel");
+                    if (!d.justificatif) alertes.push("Justificatif manquant");
+                    if ((d.siret||"").length !== 14) alertes.push("SIRET invalide");
+                    if (!d.fonction) alertes.push("Fonction non renseignée");
+                    return (
+                      <div key={d.id} style={{ ...S.card, padding:"16px 20px", borderLeft:`3px solid ${d.statut==="validee"?"#22c55e":d.statut==="rejetee"?"#EF4444":"#F59E0B"}` }}>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:16, alignItems:"start" }}>
+                          <div>
+                            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, flexWrap:"wrap" }}>
+                              <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:700, color:"#E2E8F0" }}>🏛️ {d.commune}</span>
+                              <span style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>{d.dept}</span>
+                              <span style={S.chip("#0A1628","#60A5FA","#1E3A5F")}>{d.typeEmployeur}</span>
+                              <span style={S.chip(bs.bg,bs.color,bs.border)}>{bs.label}</span>
+                              <span style={{ fontSize:11, color:"#4A6080" }}>{d.date}</span>
+                            </div>
+                            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))", gap:8, marginBottom:8 }}>
+                              {[["👤",`${d.nomContact}${d.fonction?" — "+d.fonction:""}`],["📧",d.email],["🔢",d.siret],["📎",d.justificatif||"Non fourni"]].map(([icon,val])=>(
+                                <div key={icon}>
+                                  <div style={{ fontSize:10, color:"#4A6080", fontWeight:700 }}>{icon}</div>
+                                  <div style={{ fontSize:12, color:val==="Non fourni"?"#EF4444":"#8FA3BB" }}>{val}</div>
+                                </div>
+                              ))}
+                            </div>
+                            {alertes.length > 0 && <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                              {alertes.map(a=><span key={a} style={S.chip("#450a0a","#fca5a5","#7f1d1d")}>⚠️ {a}</span>)}
+                            </div>}
+                            {alertes.length===0 && d.statut==="en_attente" && <span style={S.chip("#052e16","#4ade80","#14532d")}>✅ Dossier complet</span>}
+                            {d.motifRejet && <div style={{ background:"#450a0a", border:"1px solid #7f1d1d", borderRadius:6, padding:"6px 10px", marginTop:6, fontSize:12, color:"#fca5a5" }}>Motif : {d.motifRejet}</div>}
                           </div>
-                          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:8, marginBottom:10 }}>
-                            {[["👤",`${d.nomContact}${d.fonction?" — "+d.fonction:""}`],["📧",d.email],["🔢",d.siret],["📎",d.justificatif||"Non fourni"]].map(([icon,val])=>(
-                              <div key={icon}>
-                                <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"0.8px", marginBottom:2 }}>{icon}</div>
-                                <div style={{ fontSize:12, color:val==="Non fourni"?"#EF4444":"#8FA3BB" }}>{val}</div>
-                              </div>
-                            ))}
-                          </div>
-                          {alertes.length > 0 && <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
-                            {alertes.map(a=><span key={a} style={S.chip("#450a0a","#fca5a5","#7f1d1d")}>⚠️ {a}</span>)}
-                          </div>}
-                          {alertes.length === 0 && d.statut==="en_attente" && <span style={S.chip("#052e16","#4ade80","#14532d")}>✅ Dossier complet — Prêt à valider</span>}
-                          {d.motifRejet && <div style={{ background:"#450a0a", border:"1px solid #7f1d1d", borderRadius:6, padding:"7px 10px", marginTop:8, fontSize:12, color:"#fca5a5" }}>Motif : {d.motifRejet}</div>}
+                          {d.statut==="en_attente" && (
+                            <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
+                              <button style={S.btnOk} onClick={()=>validerMairie(d.id)}>✅ Valider</button>
+                              <button style={S.btnErr} onClick={()=>setModal({type:"rejeter",id:d.id})}>❌ Rejeter</button>
+                            </div>
+                          )}
                         </div>
-                        {d.statut==="en_attente" && <div style={{ display:"flex", flexDirection:"column", gap:8, flexShrink:0 }}>
-                          <button style={S.btnOk} onClick={()=>validerMairie(d.id)}>✅ Valider</button>
-                          <button style={S.btnErr} onClick={()=>setModal({type:"rejeter",id:d.id})}>❌ Rejeter</button>
-                        </div>}
                       </div>
+                    );
+                  })}
+                </div>
+              </div>}
+
+              {/* ── ONGLET 2 : Agents inscrits ───────────────────────── */}
+              {ongletAdmin==="agents" && <div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14, flexWrap:"wrap", gap:10 }}>
+                  <div style={{ fontSize:13, color:"#8FA3BB" }}>{officers.length} agents inscrits · <span style={{ color:"#4ade80" }}>{officers.filter(o=>o.statut==="titulaire").length} titulaires</span> · <span style={{ color:"#fbbf24" }}>{officers.filter(o=>o.statut==="laureat").length} lauréats</span></div>
+                  <button style={{ ...S.btnG, fontSize:11 }} onClick={()=>notify("Export CSV disponible en production.")}>📊 Exporter CSV</button>
+                </div>
+                {/* En-tête colonnes */}
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr 1fr 90px 80px", gap:8, padding:"6px 12px", fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"0.8px", borderBottom:"1px solid #1A2E4A", marginBottom:4 }}>
+                  <span>AGENT (ANONYMISÉ)</span><span>COMMUNE · GRADE</span><span>DISPO</span><span>STATUT</span><span>MODE</span><span>ACTION</span>
+                </div>
+                {officers.map(o => {
+                  const {display} = anonymize(o.prenom, o.nom);
+                  const db = dispoBadge(o.dispo);
+                  const eng = engagementRestant(o.dateTitularisation, o.engagementSigne);
+                  const demandeEnCours = demandesConsentement.some(d=>d.officerId===o.id && d.statut==="en_attente");
+                  return (
+                    <div key={o.id} style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr 1fr 90px 80px", gap:8, padding:"10px 12px", borderBottom:"1px solid #1A2E4A", alignItems:"center", fontSize:12 }}
+                      onMouseEnter={e=>e.currentTarget.style.background="#0A1220"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                      <div>
+                        <span style={{ color:"#E2E8F0", fontWeight:600 }}>{display}</span>
+                        {(o.prioriteLegale||[]).length>0 && <span style={{ fontSize:10, color:"#93C5FD", marginLeft:6 }}>⭐</span>}
+                        {eng && <span style={{ fontSize:10, color:"#fbbf24", marginLeft:6 }}>⚠️ Eng.</span>}
+                        {demandeEnCours && <span style={{ fontSize:10, color:"#c084fc", marginLeft:6 }}>⏳ Consentement</span>}
+                      </div>
+                      <div style={{ color:"#8FA3BB" }}>{(o.commune||"").replace(/\s*\(\d+\)/,"")} · <span style={{ color:catColor(GRADES_CAT[o.grade]||"C") }}>{o.grade}</span></div>
+                      <span style={S.chip(db.bg,db.color,db.dot)}>{o.dispo}</span>
+                      <span style={S.chip(o.statut==="titulaire"?"#052e16":"#1e3a5f", o.statut==="titulaire"?"#4ade80":"#60A5FA", o.statut==="titulaire"?"#14532d":"#2D5A8E")}>
+                        {o.statut==="titulaire"?"Titulaire":"Lauréat"}
+                      </span>
+                      <span style={{ fontSize:11, color: autorisationEmployeur?"#4ade80":"#F59E0B" }}>
+                        {/* Note: en prod chaque agent a son propre modeRecherche */}
+                        🟢 Actif
+                      </span>
+                      <button style={{ fontSize:10, padding:"3px 8px", borderRadius:5, border:"1px solid #7f1d1d", background:"#450a0a", color:"#fca5a5", cursor:"pointer", fontFamily:"Barlow,sans-serif" }}
+                        onClick={()=>notify(`Profil de ${display} suspendu (démo).`,"error")}>
+                        Suspendre
+                      </button>
                     </div>
                   );
                 })}
-              </div>
+              </div>}
+
+              {/* ── ONGLET 3 : Modération annonces ──────────────────── */}
+              {ongletAdmin==="annonces" && <div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14, flexWrap:"wrap", gap:10 }}>
+                  <div style={{ fontSize:13, color:"#8FA3BB" }}>{annonces.length} annonces actives · toutes mairies vérifiées</div>
+                  <button style={{ ...S.btnG, fontSize:11 }} onClick={()=>notify("Export CSV disponible en production.")}>📊 Exporter CSV</button>
+                </div>
+                <div style={{ display:"grid", gap:10 }}>
+                  {annonces.map(a=>(
+                    <div key={a.id} style={{ ...S.card, padding:"14px 18px", display:"grid", gridTemplateColumns:"1fr auto", gap:12, alignItems:"center" }}>
+                      <div>
+                        <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:6, flexWrap:"wrap" }}>
+                          <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:16, fontWeight:700, color:"#E2E8F0" }}>🏛️ {a.commune}</span>
+                          <span style={S.chip("#0A1628","#8FA3BB","#1E3A5F")}>{a.dept}</span>
+                          <span style={S.chip("#0A1628","#60A5FA","#1E3A5F")}>{a.region}</span>
+                          <span style={S.chip( a.urgence==="Urgent"?"#450a0a":"#052e16", a.urgence==="Urgent"?"#fca5a5":"#4ade80", a.urgence==="Urgent"?"#7f1d1d":"#14532d")}>
+                            {a.urgence==="Urgent"?"🔴":"🟢"} {a.urgence}
+                          </span>
+                        </div>
+                        <div style={{ fontSize:12, color:"#8FA3BB" }}>{a.grade} · {a.besoin} poste(s) · {a.typeEmployeur}</div>
+                        {a.description && <div style={{ fontSize:11, color:"#4A6080", marginTop:4, fontStyle:"italic" }}>"{a.description.slice(0,80)}…"</div>}
+                        <div style={{ fontSize:10, color:"#2D4A6A", marginTop:4 }}>Publiée le {a.date}</div>
+                      </div>
+                      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                        <button style={{ ...S.btnOk, fontSize:11, padding:"5px 12px" }} onClick={()=>notify(`Annonce ${a.commune} épinglée en priorité.`)}>📌 Épingler</button>
+                        <button style={{ ...S.btnErr, fontSize:11, padding:"5px 12px" }}
+                          onClick={()=>{ setAnnonces(p=>p.filter(x=>x.id!==a.id)); notify(`Annonce ${a.commune} supprimée.`,"error"); }}>
+                          🗑️ Supprimer
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {annonces.length===0 && <div style={{ textAlign:"center", color:"#4A6080", padding:"40px 0", fontSize:14 }}>Aucune annonce active.</div>}
+                </div>
+              </div>}
+
+              {/* ── ONGLET 4 : Abonnements actifs ───────────────────── */}
+              {ongletAdmin==="abonnements" && <div>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14, flexWrap:"wrap", gap:10 }}>
+                  <div>
+                    <span style={{ fontSize:13, color:"#8FA3BB" }}>MRR total : </span>
+                    <span style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:24, fontWeight:800, color:"#4ade80" }}>{mrr} €/mois</span>
+                    <span style={{ fontSize:12, color:"#4A6080", marginLeft:10 }}>ARR estimé : {(mrr*10).toLocaleString("fr-FR")} €</span>
+                  </div>
+                  <button style={{ ...S.btnG, fontSize:11 }} onClick={()=>notify("Export comptable disponible en production (format FACTUR-X).")}>📄 Export comptable</button>
+                </div>
+                {/* En-tête */}
+                <div style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr 1fr 80px", gap:8, padding:"6px 12px", fontSize:10, color:"#4A6080", fontWeight:700, letterSpacing:"0.8px", borderBottom:"1px solid #1A2E4A", marginBottom:4 }}>
+                  <span>ABONNÉ</span><span>PLAN</span><span>PRIX/MOIS</span><span>DEPUIS</span><span>ACTION</span>
+                </div>
+                {[
+                  { nom:"Mairie de Sète",  type:"mairie", plan:"Essentiel",      prix:49,  depuis:"01/03/2026", statut:"actif" },
+                  { nom:"CDG Hérault 34",  type:"cdg",    plan:"CDG Département",prix:399, depuis:"15/01/2026", statut:"actif" },
+                ].map((ab,i)=>(
+                  <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1.5fr 1fr 1fr 80px", gap:8, padding:"11px 12px", borderBottom:"1px solid #1A2E4A", alignItems:"center", fontSize:13 }}
+                    onMouseEnter={e=>e.currentTarget.style.background="#0A1220"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                    <div>
+                      <span style={{ color:"#E2E8F0", fontWeight:600 }}>{({mairie:"🏛️",cdg:"🗺️"})[ab.type]} {ab.nom}</span>
+                    </div>
+                    <div>
+                      <span style={{ background: ab.type==="cdg"?"#2e1065":"#1c1917", color: ab.type==="cdg"?"#c084fc":"#fbbf24", fontSize:11, fontWeight:600, padding:"2px 8px", borderRadius:6 }}>{ab.plan}</span>
+                    </div>
+                    <span style={{ color:"#4ade80", fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:800 }}>{ab.prix} €</span>
+                    <span style={{ color:"#4A6080", fontSize:11 }}>{ab.depuis}</span>
+                    <div style={{ display:"flex", gap:4 }}>
+                      <button style={{ fontSize:10, padding:"3px 7px", borderRadius:5, border:"1px solid #1E3A5F", background:"#0A1628", color:"#60A5FA", cursor:"pointer", fontFamily:"Barlow,sans-serif" }}
+                        onClick={()=>notify(`Geste commercial appliqué à ${ab.nom}.`)}>Geste</button>
+                    </div>
+                  </div>
+                ))}
+                {/* Projection MRR */}
+                <div style={{ marginTop:20, ...S.card, padding:"16px 20px", borderLeft:"3px solid #4ade80" }}>
+                  <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:15, fontWeight:700, color:"#E2E8F0", marginBottom:12 }}>📈 Projection de croissance — Scénario central</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+                    {[["M+1","~600 €"],["M+3","~1 200 €"],["M+6","~2 000 €"],["M+12","~5 400 €"]].map(([m,v])=>(
+                      <div key={m} style={{ textAlign:"center", background:"#0A1220", borderRadius:8, padding:"10px 8px" }}>
+                        <div style={{ fontSize:11, color:"#4A6080" }}>{m}</div>
+                        <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:20, fontWeight:800, color:"#4ade80" }}>{v}</div>
+                        <div style={{ fontSize:10, color:"#2D4A6A" }}>MRR</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>}
             </div>
-          )}
+            );
+          })()}
         </div>}
 
         {/* ══ INSCRIPTION POLICIER ════════════════════════════════ */}
         {view==="inscription" && role==="policier" && <div style={{ paddingTop:36, maxWidth:700, margin:"0 auto" }}>
-          <button style={{ ...S.btnG, marginBottom:22, fontSize:12 }} onClick={()=>setView("accueil")}>← Retour</button>
-          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:6 }}>👮 Inscription Policier Municipal</div>
+          <button style={{ ...S.btnG, marginBottom:22, fontSize:12 }}
+            onClick={()=>setView(userConnecte && userType==="pm" ? "dashboard_pm" : "accueil")}>← Retour</button>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:6 }}>
+            {userConnecte && userType==="pm" ? "✏️ Modifier mon profil" : "👮 Inscription Policier Municipal"}
+          </div>
           <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"10px 14px", marginBottom:20, fontSize:13, color:"#86efac" }}>
             🔒 <strong>Protection garantie</strong> — nom anonymisé, coordonnées chiffrées. Déverrouillage uniquement par mairies officiellement vérifiées avec abonnement actif.
           </div>
@@ -1201,17 +1940,90 @@ function App() {
             </div>
 
             <div style={{ display:"flex", gap:10, marginTop:20 }}>
-              <button style={{ ...S.btnP, flex:1, padding:"12px" }} onClick={sauvegarderPolicier}>✅ Créer mon profil anonyme</button>
-              <button style={S.btnG} onClick={()=>setView("accueil")}>Annuler</button>
+              <button style={{ ...S.btnP, flex:1, padding:"12px" }} onClick={sauvegarderPolicier}>
+                {userConnecte && userType==="pm" ? "💾 Mettre à jour mon profil" : "✅ Créer mon profil anonyme"}
+              </button>
+              <button style={S.btnG} onClick={()=>setView(userConnecte && userType==="pm" ? "dashboard_pm" : "accueil")}>Annuler</button>
             </div>
           </div>
         </div>}
 
         {/* ══ INSCRIPTION MAIRIE ══════════════════════════════════ */}
         {view==="inscription" && role==="mairie" && <div style={{ paddingTop:36, maxWidth:700, margin:"0 auto" }}>
-          <button style={{ ...S.btnG, marginBottom:22, fontSize:12 }} onClick={()=>setView("accueil")}>← Retour</button>
-          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:6 }}>🏛️ Demande de vérification</div>
-          <p style={{ color:"#4A6080", marginBottom:20 }}>Commune, EPCI, Syndicat intercommunal ou CDG — dossier examiné sous 48h ouvrées.</p>
+          <button style={{ ...S.btnG, marginBottom:22, fontSize:12 }} onClick={()=>setView(userConnecte?"dashboard_mairie":"accueil")}>← Retour</button>
+
+          {/* ── BRANCHE A : mairie déjà vérifiée et connectée → formulaire annonce pré-rempli ── */}
+          {mairieStatut === "verifie" && userConnecte && userType === "mairie" ? (<>
+            <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:4 }}>📋 Publier une annonce</div>
+            <p style={{ color:"#4A6080", marginBottom:16 }}>
+              🏛️ <strong style={{ color:"#E2E8F0" }}>{userProfil?.commune}</strong> · {userProfil?.dept} · {userProfil?.typeEmployeur}
+            </p>
+            <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:"9px 14px", marginBottom:20, fontSize:13, color:"#86efac" }}>
+              ✅ Mairie vérifiée — vos coordonnées sont pré-remplies. Complétez les détails du poste.
+            </div>
+            <div style={{ ...S.card, padding:26 }}>
+              <div style={{ fontSize:11, color:"#4A6080", fontWeight:700, letterSpacing:"1px", marginBottom:14 }}>DÉTAILS DU POSTE</div>
+              <div style={FR} className="fr2">
+                <div>
+                  <label>Poste recherché</label>
+                  <select value={newAnnonce.grade} onChange={e=>setNewAnnonce(p=>({...p,grade:e.target.value}))}>
+                    {["Tous grades",...GRADES].map(g=><option key={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label>Nombre de postes</label>
+                  <input type="number" min="1" max="20" value={newAnnonce.besoin} onChange={e=>setNewAnnonce(p=>({...p,besoin:e.target.value}))} />
+                </div>
+              </div>
+              <div style={FR} className="fr2">
+                <div>
+                  <label>Délai souhaité *</label>
+                  <select value={newAnnonce.urgence} onChange={e=>setNewAnnonce(p=>({...p,urgence:e.target.value}))}>
+                    <option value="">Choisir...</option>
+                    {["Urgent","1 mois","2 mois","3 mois","6 mois","Saison estivale"].map(d=><option key={d}>{d}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label>Région</label>
+                  <select value={newAnnonce.region} onChange={e=>setNewAnnonce(p=>({...p,region:e.target.value}))}>
+                    <option value="">Choisir...</option>
+                    {REGIONS.map(r=><option key={r}>{r}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginBottom:20 }}>
+                <label>Description du poste</label>
+                <textarea rows={4} placeholder="Décrivez le poste, les avantages, le contexte (logement possible, prime d'installation, partenariat PN...)..."
+                  value={newAnnonce.description} onChange={e=>setNewAnnonce(p=>({...p,description:e.target.value}))} style={{ resize:"vertical" }} />
+              </div>
+              {/* Récap pré-rempli en lecture seule */}
+              <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:"10px 14px", marginBottom:20 }}>
+                <div style={{ fontSize:10, color:"#4A6080", fontWeight:700, marginBottom:8, letterSpacing:"0.8px" }}>DONNÉES MAIRIE (PRÉ-REMPLIES)</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, fontSize:12 }}>
+                  {[["Commune",userProfil?.commune],["Département",userProfil?.dept],["Type",userProfil?.typeEmployeur],["Gestionnaire",userProfil?.nomContact]].map(([k,v])=>(
+                    <div key={k}><span style={{ color:"#4A6080" }}>{k} : </span><span style={{ color:"#E2E8F0" }}>{v}</span></div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display:"flex", gap:10 }}>
+                <button style={{ ...S.btnP, flex:1, padding:"12px" }} onClick={()=>{
+                  if (!newAnnonce.urgence) { notify("Veuillez choisir un délai","error"); return; }
+                  setNewAnnonce(p=>({...p,
+                    commune: userProfil?.commune || p.commune,
+                    dept: userProfil?.dept || p.dept,
+                    typeEmployeur: userProfil?.typeEmployeur || p.typeEmployeur
+                  }));
+                  setTimeout(()=>publierAnnonce(), 50);
+                }}>📢 Publier l'annonce</button>
+                <button style={S.btnG} onClick={()=>setView("dashboard_mairie")}>Annuler</button>
+              </div>
+            </div>
+          </>) : (
+
+          /* ── BRANCHE B : mairie non connectée / non vérifiée → demande de vérification ── */
+          <>
+            <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, marginBottom:6 }}>🏛️ Demande de vérification</div>
+            <p style={{ color:"#4A6080", marginBottom:20 }}>Commune, EPCI, Syndicat intercommunal ou CDG — dossier examiné sous 48h ouvrées.</p>
 
           {/* Critères */}
           <div style={{ ...S.card, padding:"16px 20px", marginBottom:22, borderLeft:"3px solid #F59E0B" }}>
@@ -1332,6 +2144,7 @@ function App() {
               <button style={S.btnG} onClick={()=>setView("accueil")}>Annuler</button>
             </div>
           </div>
+          </>)}
         </div>}
       </main>
 
@@ -1383,15 +2196,39 @@ function App() {
         </div>
       </div>}
 
-      {/* Non vérifiée */}
+      {/* Non vérifiée — pas de compte */}
       {modal?.type==="non_verifiee" && <div className="overlay" onClick={()=>setModal(null)}>
         <div className="modal" style={{ textAlign:"center" }} onClick={e=>e.stopPropagation()}>
           <div style={{ fontSize:50, marginBottom:14 }}>🔒</div>
-          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800, marginBottom:10 }}>Accès restreint</div>
-          <p style={{ color:"#8FA3BB", fontSize:14, lineHeight:1.7, marginBottom:20 }}>L'accès aux profils est réservé aux <strong style={{ color:"#E2E8F0" }}>collectivités officiellement vérifiées</strong>. Cette restriction protège les agents contre tout contact non autorisé.</p>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800, marginBottom:10 }}>Compte requis</div>
+          <p style={{ color:"#8FA3BB", fontSize:14, lineHeight:1.7, marginBottom:6 }}>Créez un compte gratuitement pour <strong style={{ color:"#4ade80" }}>publier des annonces</strong> et recevoir des candidatures d'agents PM.</p>
+          <p style={{ color:"#8FA3BB", fontSize:13, lineHeight:1.7, marginBottom:20 }}>La souscription d'un abonnement vous donnera ensuite accès aux profils PM et au déverrouillage des coordonnées.</p>
+          <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
+            <button style={S.btnP} onClick={()=>{setModal(null);setRole("mairie");setView("inscription")}}>🏛️ Créer un compte gratuit</button>
+            <button style={{ ...S.btnG, borderColor:"#2D5A8E" }} onClick={()=>{setModal(null);setModal({type:"connexion"})}}>🔑 Se connecter</button>
+          </div>
+        </div>
+      </div>}
+
+      {/* Non abonné — compte créé mais pas encore abonné */}
+      {modal?.type==="non_abonne" && <div className="overlay" onClick={()=>setModal(null)}>
+        <div className="modal" style={{ textAlign:"center" }} onClick={e=>e.stopPropagation()}>
+          <div style={{ fontSize:50, marginBottom:14 }}>💳</div>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800, marginBottom:10 }}>Abonnement requis</div>
+          <div style={{ background:"#052e16", border:"1px solid #14532d", borderRadius:8, padding:12, marginBottom:16, textAlign:"left" }}>
+            <div style={{ color:"#4ade80", fontWeight:700, fontSize:13, marginBottom:6 }}>✅ Ce que vous pouvez faire avec votre compte actuel</div>
+            <div style={{ fontSize:12, color:"#86efac" }}>• Publier des annonces visibles par les agents PM</div>
+            <div style={{ fontSize:12, color:"#86efac" }}>• Recevoir des candidatures spontanées</div>
+          </div>
+          <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:8, padding:12, marginBottom:16, textAlign:"left" }}>
+            <div style={{ color:"#fbbf24", fontWeight:700, fontSize:13, marginBottom:6 }}>🔒 Ce qui nécessite un abonnement</div>
+            <div style={{ fontSize:12, color:"#92400e" }}>• Consulter les profils PM disponibles</div>
+            <div style={{ fontSize:12, color:"#92400e" }}>• Déverrouiller les coordonnées des agents</div>
+            <div style={{ fontSize:12, color:"#92400e" }}>• Alertes légales (engagement de servir 10 877 €)</div>
+          </div>
           <div style={{ display:"flex", gap:10, justifyContent:"center" }}>
-            <button style={S.btnP} onClick={()=>{setModal(null);setRole("mairie");setView("inscription")}}>🏛️ Déposer un dossier</button>
-            <button style={S.btnG} onClick={()=>setModal(null)}>Fermer</button>
+            <button style={S.btnP} onClick={()=>{setModal(null);setModal({type:"abonnement"})}}>Choisir un abonnement — dès 29 €/mois</button>
+            <button style={S.btnG} onClick={()=>setModal(null)}>Plus tard</button>
           </div>
         </div>
       </div>}
@@ -1414,32 +2251,42 @@ function App() {
             ))}
           </div>
           <div style={{ display:"grid", gap:10 }}>
-            {ABONNEMENTS.map(ab=>{
-              const prix = facturation==="annuel" ? Math.round(ab.prixAnnuel/12) : ab.prix;
-              const suffixe = facturation==="annuel" ? `${ab.prixAnnuel.toLocaleString("fr-FR")} €/an (−${ab.remisePct}%)` : `${prix} €/mois`;
-              return (
-                <div key={ab.id} style={{ background:"#0A1628", border:`2px solid ${ab.color}40`, borderRadius:10, padding:"14px 16px", cursor:"pointer", transition:"all .15s" }}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=ab.color;e.currentTarget.style.transform="translateX(4px)"}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor=ab.color+"40";e.currentTarget.style.transform="translateX(0)"}}
-                  onClick={()=>souscribreAbonnement(ab)}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <div>
-                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:800, color:ab.color }}>{ab.label}</div>
-                      <div style={{ fontSize:12, color:"#64748B", marginTop:2 }}>{ab.cible} · {ab.illimite?"Contacts illimités":`${ab.contactsMois} contacts/mois`}</div>
+            {(() => {
+              const plansFiltres = userType === "cdg"
+                ? ABONNEMENTS.filter(ab => ab.id.startsWith("cdg"))
+                : ABONNEMENTS.filter(ab => {
+                    if (ab.id.startsWith("cdg")) return false;
+                    // commune_affiliee uniquement si couvert par CDG abonné
+                    if (ab.affiliee) return userProfil?.rattachementCDG === "couvert";
+                    return true;
+                  });
+              return plansFiltres.map(ab => {
+                const prix = facturation==="annuel" ? Math.round(ab.prixAnnuel/12) : ab.prix;
+                const suffixe = facturation==="annuel" ? `${ab.prixAnnuel.toLocaleString("fr-FR")} €/an (−${ab.remisePct}%)` : `${prix} €/mois`;
+                return (
+                  <div key={ab.id} style={{ background:"#0A1628", border:`2px solid ${ab.color}40`, borderRadius:10, padding:"14px 16px", cursor:"pointer", transition:"all .15s" }}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=ab.color;e.currentTarget.style.transform="translateX(4px)"}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor=ab.color+"40";e.currentTarget.style.transform="translateX(0)"}}
+                    onClick={()=>souscribreAbonnement(ab)}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <div>
+                        <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:18, fontWeight:800, color:ab.color }}>{ab.label}</div>
+                        <div style={{ fontSize:12, color:"#64748B", marginTop:2 }}>{ab.cible} · {ab.illimite?"Contacts illimités":`${ab.contactsMois} contacts/mois`}</div>
+                      </div>
+                      <div style={{ textAlign:"right", flexShrink:0 }}>
+                        <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:24, fontWeight:800, color:ab.color }}>{prix} €</div>
+                        <div style={{ fontSize:10, color:"#4A6080" }}>{suffixe}</div>
+                      </div>
                     </div>
-                    <div style={{ textAlign:"right", flexShrink:0 }}>
-                      <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:24, fontWeight:800, color:ab.color }}>{prix} €</div>
-                      <div style={{ fontSize:10, color:"#4A6080" }}>{suffixe}</div>
-                    </div>
+                    {ab.id==="essentiel" && (
+                      <div style={{ marginTop:8, textAlign:"right" }}>
+                        <span style={{ fontSize:10, background:`${ab.color}22`, color:ab.color, padding:"2px 8px", borderRadius:8, fontWeight:700 }}>⭐ Le plus choisi</span>
+                      </div>
+                    )}
                   </div>
-                  {ab.id==="essentiel" && (
-                    <div style={{ marginTop:8, textAlign:"right" }}>
-                      <span style={{ fontSize:10, background:`${ab.color}22`, color:ab.color, padding:"2px 8px", borderRadius:8, fontWeight:700 }}>⭐ Le plus choisi</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
           {/* Commission */}
           <div style={{ background:"#1c1006", border:"1px solid #78350f", borderRadius:10, padding:"12px 16px", marginTop:12 }}>
@@ -1452,6 +2299,67 @@ function App() {
             </div>
           </div>
           <p style={{ fontSize:11, color:"#2D4A6A", textAlign:"center", marginTop:12 }}>Paiement sécurisé · Accès immédiat · Sans engagement sur le plan Découverte</p>
+        </div>
+      </div>}
+
+      {/* Confirmation abonnement — Point 2 */}
+      {modal?.type==="confirmer_abonnement" && <div className="overlay" onClick={()=>setModal(null)}>
+        <div className="modal" style={{ maxWidth:420, textAlign:"center" }} onClick={e=>e.stopPropagation()}>
+          <div style={{ fontSize:40, marginBottom:12 }}>💳</div>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:22, fontWeight:800, marginBottom:8 }}>Confirmer l'abonnement</div>
+          <div style={{ background:"#0A1220", border:`1px solid ${modal.ab?.color}40`, borderRadius:10, padding:"14px 20px", marginBottom:16, textAlign:"left" }}>
+            <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:20, fontWeight:800, color:modal.ab?.color }}>{modal.ab?.label}</div>
+            <div style={{ fontSize:13, color:"#64748B", marginTop:4 }}>{modal.ab?.cible}</div>
+            <div style={{ borderTop:"1px solid #1A2E4A", marginTop:12, paddingTop:12, display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, fontSize:12 }}>
+              {[
+                ["Prix mensuel", `${modal.ab?.prix} €/mois`],
+                ["Prix annuel", `${modal.ab?.prixAnnuel} €/an (−${modal.ab?.remisePct}%)`],
+                ["Contacts/mois", modal.ab?.illimite ? "Illimités" : `${modal.ab?.contactsMois}`],
+                ["Engagement", "Aucun — résiliable à tout moment"],
+              ].map(([k,v])=>(
+                <div key={k}>
+                  <div style={{ color:"#4A6080", fontSize:11 }}>{k}</div>
+                  <div style={{ color:"#E2E8F0", fontWeight:600 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p style={{ fontSize:12, color:"#4A6080", marginBottom:16 }}>Un email de confirmation sera envoyé à <strong style={{ color:"#E2E8F0" }}>{userProfil?.email}</strong>. L'accès est immédiat dès validation.</p>
+          <div style={{ display:"flex", gap:10 }}>
+            <button style={{ ...S.btnP, flex:1 }} onClick={()=>confirmerAbonnement(modal.ab)}>✅ Confirmer — {modal.ab?.prix} €/mois</button>
+            <button style={S.btnG} onClick={()=>setModal(null)}>Annuler</button>
+          </div>
+        </div>
+      </div>}
+
+      {/* Simulation engagement de servir — Action rapide mairie */}
+      {modal?.type==="simulation_engagement" && <div className="overlay" onClick={()=>setModal(null)}>
+        <div className="modal" style={{ maxWidth:440 }} onClick={e=>e.stopPropagation()}>
+          <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:20, fontWeight:800, marginBottom:14 }}>⚖️ Simuler l'engagement de servir</div>
+          <p style={{ fontSize:13, color:"#8FA3BB", marginBottom:16, lineHeight:1.6 }}>L'engagement de servir dure 3 ans à compter de la titularisation. En cas de départ anticipé, la commune d'origine peut réclamer un remboursement (max. 10 877 €, dégressif).</p>
+          {(() => {
+            const [dateTit, setDateTit] = [null, ()=>{}]; // lecture seule démo
+            return (
+              <div style={{ background:"#0A1220", border:"1px solid #1E3A5F", borderRadius:8, padding:16 }}>
+                <div style={{ fontSize:11, color:"#4A6080", marginBottom:12, fontWeight:700 }}>EXEMPLE DE CALCUL</div>
+                {[
+                  { label:"Titularisation", date:"01/09/2022", moisRestants:5,  remb:1510 },
+                  { label:"Titularisation", date:"01/09/2023", moisRestants:17, remb:5136 },
+                  { label:"Titularisation", date:"01/09/2024", moisRestants:29, remb:8760 },
+                ].map((ex,i)=>(
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #1A2E4A", fontSize:13 }}>
+                    <span style={{ color:"#8FA3BB" }}>{ex.date}</span>
+                    <span style={{ color:"#fbbf24" }}>{ex.moisRestants} mois restants</span>
+                    <span style={{ color:"#fca5a5", fontWeight:700 }}>~{ex.remb.toLocaleString("fr-FR")} €</span>
+                  </div>
+                ))}
+                <div style={{ fontSize:11, color:"#4A6080", marginTop:10 }}>
+                  Formule : 10 877 € × (mois restants / 36)
+                </div>
+              </div>
+            );
+          })()}
+          <button style={{ ...S.btnG, width:"100%", marginTop:14 }} onClick={()=>setModal(null)}>Fermer</button>
         </div>
       </div>}
 
