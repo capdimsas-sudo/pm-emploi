@@ -299,10 +299,10 @@ function SlideSolution() {
         {[
           {icon:"🔍",t:"Agrégation nationale",d:"Toutes les offres PM de France — communes, EPCI, syndicats, CDG — centralisées et mises à jour quotidiennement.",tag:"Agents & Lauréats"},
           {icon:"⚡",t:"Matching réglementaire",d:"Calcul automatique de l'éligibilité, de l'engagement de servir restant et des priorités légales pour chaque profil.",tag:"Différenciateur clé",feat:true},
-          {icon:"🔒",t:"Anonymat total",d:"Noms masqués (M. D***t), coordonnées chiffrées. Déverrouillage uniquement par mairies vérifiées avec abonnement actif.",tag:"Protection agent"},
-          {icon:"🏛",t:"Espace employeur",d:"Communes, EPCI, syndicats : publication de postes, réception de candidatures, alertes légales automatiques.",tag:"Collectivités"},
-          {icon:"📍",t:"Interlocuteur identifié",d:"L'app identifie automatiquement le bon destinataire : maire, président d'EPCI ou bureau syndical selon la structure.",tag:"Procédures"},
-          {icon:"🔔",t:"Alertes sur mesure",d:"Offres filtrées par grade, région, type d'employeur et armement. Notification en temps réel dès publication.",tag:"Notifications"},
+          {icon:"🆓",t:"Modèle freemium",d:"Compte gratuit sans CB pour tous. Mairies publient leurs annonces librement. L'abonnement s'active uniquement pour accéder aux profils agents.",tag:"Acquisition sans friction"},
+          {icon:"🛡️",t:"Consentement avant déverrouillage",d:"L'agent est notifié et dispose de 48h pour accepter ou refuser. Crédit restitué si refus. Log horodaté RGPD consultable à tout moment.",tag:"Protection RGPD"},
+          {icon:"🔒",t:"Exclusion employeur actuel",d:"Un agent n'est jamais visible par sa commune ou son CDG départemental. Règle technique non contournable — confiance totale des agents.",tag:"Anonymat garanti"},
+          {icon:"🏛",t:"Interlocuteur identifié",d:"L'app identifie automatiquement le bon destinataire : maire, président d'EPCI ou bureau syndical selon la structure juridique.",tag:"Procédures"},
         ].map((f,i)=>(
           <div key={i} className={`feat-card fu d${i+2} ${f.feat?"featured":""}`}>
             <div className="feat-icon">{f.icon}</div>
@@ -346,8 +346,8 @@ function SlideDiff() {
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginTop:16}} className="fu d4">
         {[
           {val:"10 877 €",lbl:"Remboursement formation calculé automatiquement",col:"var(--amber)"},
-          {val:"3 priorités",lbl:"Légales valorisées dans l'algorithme de matching",col:"var(--cyan)"},
-          {val:"0",lbl:"Concurrent direct spécialisé police municipale",col:"var(--green)"},
+          {val:"Consentement",lbl:"Obligatoire avant tout déverrouillage — 48h pour accepter ou refuser",col:"var(--cyan)"},
+          {val:"0",lbl:"Concurrent direct spécialisé police municipale avec ces garanties",col:"var(--green)"},
         ].map((r,i)=>(
           <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid var(--border)",borderRadius:12,padding:18}}>
             <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.8rem",color:r.col,letterSpacing:"-0.02em",marginBottom:6}}>{r.val}</div>
@@ -499,41 +499,43 @@ function SlideProjections() {
 /* ── SLIDE 6 : TARIFS ── */
 function SlideTarifs() {
   const plans = [
+    {prix:"0 €",nom:"Compte gratuit",cible:"Publier annonces · Recevoir candidatures",bg:"#1E3A5F",badge:"Freemium · sans CB"},
     {prix:"29 €",nom:"Découverte",cible:"1-3 PM · sans engagement",bg:"#1A3FC4",badge:null},
     {prix:"49 €",nom:"Essentiel",cible:"Standard + alertes légales",bg:"#B45309",badge:"Le plus choisi ⭐"},
     {prix:"179 €",nom:"Premium",cible:"Grande ville · 15+ PM",bg:"#0F6E56",badge:null},
-    {prix:"399 €",nom:"CDG Dép.",cible:"Toutes communes affiliées",bg:"#534AB7",badge:"1,16 €/commune/mois"},
-    {prix:"599 €",nom:"CDG Région",cible:"Multi-dép. · API SIRH",bg:"#9D174D",badge:null},
+    {prix:"29 €",nom:"Commune affiliée",cible:"Autonomie · CDG déjà abonné",bg:"#065F46",badge:"Via CDG"},
+    {prix:"399 €",nom:"CDG Dép.",cible:"Siège CDG + 5 licences communes",bg:"#534AB7",badge:"1,16 €/commune/mois"},
+    {prix:"599 €",nom:"CDG Région",cible:"Multi-dép. · API SIRH · +10 licences",bg:"#9D174D",badge:null},
   ];
   return (
     <div className="slide-body">
       <div className="eyebrow fu d1">Modèle tarifaire</div>
-      <h2 className="slide-title fu d2">Abonnements mensuels<br/><em>avec renouvellement automatique</em></h2>
-      <div className="plans-grid">
+      <h2 className="slide-title fu d2">Freemium à déclencheur naturel —<br/><em>on paie quand la valeur est évidente</em></h2>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:8,marginTop:20,flex:1}}>
         {plans.map((p,i)=>(
-          <div key={i} className={`plan-card fu d${i+2}`} style={{background:p.bg}}>
-            {p.badge && <div style={{fontSize:10,fontWeight:700,background:"rgba(255,255,255,0.15)",borderRadius:6,padding:"3px 8px",marginBottom:10,color:"rgba(255,255,255,0.9)",display:"inline-block"}}>{p.badge}</div>}
-            <div className="plan-price">{p.prix}</div>
-            <div className="plan-name">{p.nom}</div>
-            <div className="plan-cible">{p.cible}</div>
+          <div key={i} className={`plan-card fu d${Math.min(i+2,7)}`} style={{background:p.bg}}>
+            {p.badge && <div style={{fontSize:9,fontWeight:700,background:"rgba(255,255,255,0.15)",borderRadius:6,padding:"3px 6px",marginBottom:8,color:"rgba(255,255,255,0.9)",display:"inline-block"}}>{p.badge}</div>}
+            <div className="plan-price" style={{fontSize:"1.4rem"}}>{p.prix}</div>
+            <div className="plan-name" style={{fontSize:"0.75rem"}}>{p.nom}</div>
+            <div className="plan-cible" style={{fontSize:"0.65rem"}}>{p.cible}</div>
           </div>
         ))}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginTop:14}} className="fu d6">
-        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 18px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:"var(--gold)",marginBottom:6,letterSpacing:"0.06em"}}>COMMISSION À LA PERFORMANCE</div>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:"var(--amber)",marginBottom:4}}>250 €</div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginTop:12}} className="fu d6">
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 16px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--gold)",marginBottom:5,letterSpacing:"0.06em"}}>MODÈLE B2B2B CDG</div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.4rem",color:"var(--amber)",marginBottom:4}}>834 €/mois</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",lineHeight:1.5}}>1 CDG à 399 € + 15 licences communes (29 €) · 100 CDG = 83 400 €/mois · +1M€/an</div>
+        </div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 16px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--cyan)",marginBottom:5,letterSpacing:"0.06em"}}>COMMISSION PERFORMANCE</div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.4rem",color:"var(--cyan)",marginBottom:4}}>250 €</div>
           <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",lineHeight:1.5}}>Par recrutement réussi · Sans abonnement requis · Facturation à la prise de poste</div>
         </div>
-        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 18px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:"var(--cyan)",marginBottom:6,letterSpacing:"0.06em"}}>LICENCE WHITE-LABEL</div>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:"var(--cyan)",marginBottom:4}}>500 €+</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",lineHeight:1.5}}>Par mois · Intégration dans SIRH éditeur · Berger-Levrault, Ciril, MGDIS</div>
-        </div>
-        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"14px 18px"}}>
-          <div style={{fontSize:11,fontWeight:700,color:"var(--green)",marginBottom:6,letterSpacing:"0.06em"}}>FRANCHISE TVA</div>
-          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.6rem",color:"var(--green)",marginBottom:4}}>77 700 €</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",lineHeight:1.5}}>Seuil auto-entrepreneur · Transition SASU recommandée en année 2-3</div>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:10,padding:"12px 16px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--green)",marginBottom:5,letterSpacing:"0.06em"}}>LICENCE WHITE-LABEL</div>
+          <div style={{fontFamily:"'DM Serif Display',serif",fontSize:"1.4rem",color:"var(--green)",marginBottom:4}}>500 €+</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",lineHeight:1.5}}>Par mois · Intégration SIRH éditeur · Berger-Levrault, Ciril, MGDIS</div>
         </div>
       </div>
     </div>
