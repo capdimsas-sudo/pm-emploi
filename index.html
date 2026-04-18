@@ -320,10 +320,10 @@ function Probleme() {
 
 function Comment() {
   const steps = [
-    { n:"1", title:"Créez votre profil", desc:"Grade, ancienneté, date de titularisation, engagement de servir, priorités légales. Identité anonymisée côté mairie." },
+    { n:"1", title:"Créez votre compte gratuit", desc:"Inscription libre et gratuite — sans CB. Publiez vos annonces et recevez des candidatures dès l'étape 1. L'abonnement n'intervient que si vous souhaitez accéder aux profils agents." },
     { n:"2", title:"Consultez les offres", desc:"Toutes les offres PM en France, filtrées par région, grade et type d'employeur. Mises à jour quotidiennes." },
     { n:"3", title:"Vérifiez votre éligibilité", desc:"PM•EMPLOI calcule automatiquement votre engagement de servir restant et le coût estimé pour la collectivité d'accueil." },
-    { n:"4", title:"Entrez en contact", desc:"Candidature directe. L'app identifie le bon interlocuteur : maire, président d'EPCI ou bureau syndical." },
+    { n:"4", title:"Entrez en contact avec consentement", desc:"L'agent est notifié avant tout déverrouillage et dispose de 48h pour accepter ou refuser. L'app identifie le bon interlocuteur : maire, président d'EPCI ou bureau syndical." },
   ];
   return (
     <section className="how-section" id="comment">
@@ -412,11 +412,11 @@ function Offres() {
 function Pourquoi() {
   const cards = [
     {icon:"⚖️",accent:"10 877 €",title:"Engagement de servir calculé",desc:"Montant exact et dégressif du remboursement selon votre date de titularisation. Affiché automatiquement sur chaque profil agent."},
-    {icon:"⭐",accent:"3 priorités",title:"Priorités légales valorisées",desc:"Rapprochement de conjoint, RQTH, proche aidant : ces demandes sont identifiées et transmises en priorité à la collectivité."},
+    {icon:"⭐",accent:"3 priorités",title:"Priorités légales valorisées",desc:"Rapprochement de conjoint, RQTH, proche aidant : valorisées dans le matching. Nature exacte révélée uniquement après consentement de l'agent."},
     {icon:"🏛",accent:"3 employeurs",title:"Distinction employeur / terrain",desc:"Commune, EPCI ou syndicat : PM•EMPLOI identifie le bon interlocuteur (maire, président EPCI, bureau syndical) pour chaque mutation."},
-    {icon:"🔒",accent:"Anonymat",title:"Identité protégée par défaut",desc:"Noms masqués, coordonnées chiffrées. Déverrouillage uniquement par mairies officiellement vérifiées avec abonnement actif."},
-    {icon:"📍",accent:"100% PM",title:"Spécialisé police municipale",desc:"Agrégation des offres CDG, Gazette des communes, sites communaux. Pas de pollution avec les autres métiers de la FPT."},
-    {icon:"🔔",accent:"Temps réel",title:"Alertes sur mesure",desc:"Recevez uniquement les offres correspondant à votre grade, vos régions cibles et votre type d'employeur préféré."},
+    {icon:"🔒",accent:"Anonymat",title:"Consentement avant déverrouillage",desc:"L'agent est notifié avant tout accès à ses coordonnées. Il accepte ou refuse en 48h. Sans réponse, son choix par défaut s'applique. Crédit restitué si refus."},
+    {icon:"🛡️",accent:"Exclusion auto",title:"Protection contre l'employeur actuel",desc:"Un agent n'est jamais visible par sa commune employeur ni par son CDG départemental — sauf autorisation explicite. Règle technique non contournable."},
+    {icon:"🆓",accent:"Freemium",title:"Compte gratuit pour tous",desc:"Mairies et EPCI publient leurs annonces gratuitement dès la création du compte, sans CB. L'abonnement ne s'active qu'au moment d'accéder aux profils agents."},
   ];
   return (
     <section className="diff-section" id="pourquoi">
@@ -464,7 +464,7 @@ function CTA() {
           <div className="cta-glow" />
           <div className="eyebrow" style={{color:"var(--gold)",position:"relative"}}>Rejoindre la plateforme</div>
           <h2>La première bourse nationale<br/>dédiée aux policiers municipaux</h2>
-          <p className="section-sub">Agents : créez votre profil et recevez les offres qui correspondent à votre situation réglementaire. Collectivités : publiez vos postes et accédez à un vivier qualifié.</p>
+          <p className="section-sub">Agents : créez votre profil gratuitement et recevez les offres correspondant à votre situation réglementaire. Collectivités : publiez vos postes gratuitement — abonnement uniquement pour accéder aux profils.</p>
           <div className="cta-btns">
             <a href={APP_URL} className="btn-main">Je suis un agent →</a>
             <a href={APP_URL} className="btn-ghost">Je représente une mairie / CDG</a>
