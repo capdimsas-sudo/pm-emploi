@@ -217,7 +217,7 @@ function App() {
       dateRequete: new Date(Date.now() - 12 * 3600000).toISOString(), // il y a 12h
       statut:"en_attente", creditReserve:1 }
   ]);
-  const DELAI_H = 72; // délai de consentement en heures
+  const DELAI_H = 48; // délai de consentement en heures
 
   const [newOfficer, setNewOfficer] = useState({
     nom:"", prenom:"", grade:"Gardien", annees:"", commune:"", typeEmployeur:"Commune",
@@ -1401,7 +1401,7 @@ function App() {
             return (
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12, marginBottom:24 }}>
                 {[
-                  ["🛡️", officers.filter(o=>(o.regions||[]).includes("Occitanie")).length, "Profils PM Occitanie"],
+                  ["🛡️",officers.filter(o=>(o.regions||[]).includes(userProfil?.region||"Occitanie")).length, `Profils PM ${userProfil?.region||"Occitanie"}`],
                   ["🏛️", cdgLicences.size, "Communes actives"],
                   ["🔓", totalContacts, "Contacts déverrouillés"],
                   ["📋", totalAnnonces, "Annonces publiées"],
@@ -1526,18 +1526,18 @@ function App() {
           <div style={{ ...S.card, padding:20, marginBottom:20 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
               <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:17, fontWeight:700, color:"#E2E8F0" }}>
-                👮 Profils PM disponibles — Occitanie
+                👮 Profils PM disponibles — {userProfil?.region||"Occitanie"}
               </div>
               <div style={{ display:"flex", gap:8 }}>
                 {["Cat. C","Cat. B","Cat. A"].map(c=>(
                   <span key={c} style={{ ...S.chip("#0A1628","#8FA3BB","#1E3A5F"), cursor:"default" }}>
-                    {c} : {officers.filter(o=>(o.regions||[]).includes("Occitanie") && (GRADES_CAT[o.grade]||"C")===c.split(" ")[1]).length}
+                    {c} : {officers.filter(o=>(o.regions||[]).includes(userProfil?.region||"Occitanie") && (GRADES_CAT[o.grade]||"C")===c.split(" ")[1]).length}
                   </span>
                 ))}
               </div>
             </div>
             <div style={{ display:"grid", gap:6 }}>
-              {officers.filter(o=>(o.regions||[]).includes("Occitanie")).slice(0,4).map(o=>{
+              {officers.filter(o=>(o.regions||[]).includes(userProfil?.region||"Occitanie")).slice(0,4).map(o=>{
                 const {display,initiales} = anonymize(o.prenom,o.nom);
                 const db = dispoBadge(o.dispo);
                 return (
